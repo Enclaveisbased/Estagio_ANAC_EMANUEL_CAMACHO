@@ -92,7 +92,7 @@ for i in range(start_index, end_index):
 
 #AIRCRAFT POSTION AND ATTITUDE
 
-aircrafthdg = 0
+aircrafthdg = 230
 phi = 0
 initial_latitude = 38.7800  
 initial_longitude = -9.1342
