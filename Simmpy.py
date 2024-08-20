@@ -70,10 +70,10 @@ def quad(PSL, TSL, aircrafthdg, initial_latitude, initial_longitude, windhdg, wi
     
     
     finalposition = geodesic(meters=distance_traveledq).destination(initial_position, resultquad[2])
-    
+    webbrowser.open(f"https://www.google.com/maps?q={initial_latitude},{initial_longitude}")
+            
+    webbrowser.open(f"https://www.google.com/maps?q={finalposition[0]},{finalposition[1]}")
+  
     return(finalposition[0], finalposition[1], resultquad)
 
-   # webbrowser.open(f"https://www.google.com/maps?q={initial_latitude},{initial_longitude}")
-            
-   # webbrowser.open(f"https://www.google.com/maps?q={finalposition[0]},{finalposition[1]}")
-
+    

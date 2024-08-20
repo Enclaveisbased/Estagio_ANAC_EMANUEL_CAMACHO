@@ -33,19 +33,6 @@
             }
         }
 
-        function fillDefaultValues() {
-            document.getElementById('box').value = '38.70603814374191, -9.169521188831476, 38.75571945218928, -9.12179932887582';
-            document.getElementById('initial_latitude').value = '38.772044563205625';
-            document.getElementById('initial_longitude').value = '-9.125695992070062';
-            document.getElementById('speed').value = '10';
-            document.getElementById('icao_code').value = 'LPPT';
-            document.getElementById('heading').value = '360';
-            // Optionally, you can also set default aircraft type and name if needed
-            document.getElementById('aircraft_type').value = 'fixed_wing'; // or 'quadcopter'
-            updateAircraftList(); // Update the aircraft list based on the default type
-            document.getElementById('aircraft_name').value = ''; // Clear selection or set to a default value
-        }
-
         // Initialize the aircraft list when the page loads
         window.onload = updateAircraftList;
     </script>
@@ -114,6 +101,23 @@
 
         button:hover {
             background-color: #0056b3;
+        }
+
+        .default-values-button {
+            display: inline-block;
+            padding: 10px 15px;
+            font-size: 1em;
+            color: white;
+            background-color: #28a745;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            margin-top: 20px;
+        }
+
+        .default-values-button:hover {
+            background-color: #218838;
         }
     </style>
 </head>
@@ -209,8 +213,19 @@
             </div>
         </div>
 
-        <button type="button" onclick="fillDefaultValues()">Fill Default Values</button>
         <button type="submit">Run Analysis</button>
+        <a href="#" class="default-values-button" onclick="fillDefaults()">Fill Default Values</a>
     </form>
+
+    <script>
+        function fillDefaults() {
+            document.getElementById('box').value = '38.70603814374191,-9.169521188831476,38.75571945218928,-9.12179932887582';
+            document.getElementById('initial_latitude').value = '38.772044563205625';
+            document.getElementById('initial_longitude').value = '-9.125695992070062';
+            document.getElementById('speed').value = '10';
+            document.getElementById('icao_code').value = 'LPPT';
+            document.getElementById('heading').value = '360';
+        }
+    </script>
 </body>
 </html>
