@@ -7,15 +7,16 @@ import scipy.integrate
 import Unitconversions as cf
 from scipy.optimize import fsolve
 g = 9.81
-def trajectoryprediction(Psl, Tsl, crafthdg, Whdg, Wspdkt, draft, vhor, Windres, hmax, Endhours, Endkm, M, Cd, phi):
+def trajectoryprediction(Psl, Tsl, crafthdg, windhdg, Wspdkt, draft, vhor, hmax, M, Cd, A):
 
-    
+    if windhdg == 'VRB' :
+
+         windhdg= 0
 
     # Atmospheric conditions calculation based on SL values
     Tslk = Tsl + 273.15
     P = Psl * 100 * (1 - (hmax * 0.0065 / 288.15))**5.25588
     Tk = Tslk - 0.0065 * hmax
-    A = 0.058*0.067
     a = 340.294 * np.sqrt(Tk / 288.15)
     rho = P / (287.052874 * Tk)
 
@@ -32,8 +33,8 @@ def trajectoryprediction(Psl, Tsl, crafthdg, Whdg, Wspdkt, draft, vhor, Windres,
 
     windspddrag = Wspdkt/2 #Calculate the terminal horizontal velocity with drag and approximate the movement for a constat speed
     
-    x_wind = windspddrag * np.cos(np.pi/2 - np.deg2rad(Whdg))
-    y_wind = windspddrag * np.sin(np.pi/2 - np.deg2rad(Whdg))
+    x_wind = windspddrag * np.cos(np.pi/2 - np.deg2rad(windhdg))
+    y_wind = windspddrag * np.sin(np.pi/2 - np.deg2rad(windhdg))
     z_wind = draft
     wind = np.array([x_wind, y_wind]) #All in knots
 
@@ -94,16 +95,16 @@ def trajectoryprediction(Psl, Tsl, crafthdg, Whdg, Wspdkt, draft, vhor, Windres,
 
     gshdg = np.rad2deg((np.pi / 2 - np.arctan2(dy, dx)))%360
 
-    whdg = np.rad2deg((np.pi / 2 - np.arctan2(y_wind, x_wind)))%360
+    windhdg = np.rad2deg((np.pi / 2 - np.arctan2(y_wind, x_wind)))%360
 
 
-  ############ DEBUG SECTION #####################################################################################################################
-
+    ############ DEBUG SECTION #####################################################################################################################
+    
     print(dhor, gshdg, 'QUAD GS HDG')
 
     gsnwd = np.rad2deg((np.pi / 2 - np.arctan2(ey_craft, ex_craft)))%360
 
-    print('GS copter', gshdg, whdg, Whdg, terminalv, Dzf, cf.convvel(vhormax, 'm/s', 'kts'))
+    print('GS copter', gshdg, windhdg, windhdg, terminalv, Dzf, cf.convvel(vhormax, 'm/s', 'kts'))
 
 
     return (falltime, terminalv, dhorval, gshdg)

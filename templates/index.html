@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aircraft Analysis Tool</title>
+    <script>
+        function updateAircraftList() {
+            const aircraftType = document.getElementById("aircraft_type").value;
+            const aircraftNameSelect = document.getElementById("aircraft_name");
+            
+            // Clear the current options
+            aircraftNameSelect.innerHTML = '';
+
+            let aircraftList;
+            if (aircraftType === 'fixed_wing') {
+                aircraftList = {{ fixed_wing_list|tojson }};
+            } else if (aircraftType === 'quadcopter') {
+                aircraftList = {{ quadcopter_list|tojson }};
+            }
+
+            // Populate the aircraft dropdown with options
+            aircraftList.forEach(function(name) {
+                const option = document.createElement("option");
+                option.value = name;
+                option.text = name;
+                aircraftNameSelect.add(option);
+            });
+
+            // Select the previously chosen value, if any
+            if ("{{ aircraft_name }}" && aircraftList.includes("{{ aircraft_name }}")) {
+                aircraftNameSelect.value = "{{ aircraft_name }}";
+            }
+        }
+
+        function fillDefaultValues() {
+            document.getElementById('box').value = '38.70603814374191, -9.169521188831476, 38.75571945218928, -9.12179932887582';
+            document.getElementById('initial_latitude').value = '38.772044563205625';
+            document.getElementById('initial_longitude').value = '-9.125695992070062';
+            document.getElementById('speed').value = '10';
+            document.getElementById('icao_code').value = 'LPPT';
+            document.getElementById('heading').value = '360';
+            // Optionally, you can also set default aircraft type and name if needed
+            document.getElementById('aircraft_type').value = 'fixed_wing'; // or 'quadcopter'
+            updateAircraftList(); // Update the aircraft list based on the default type
+            document.getElementById('aircraft_name').value = ''; // Clear selection or set to a default value
+        }
+
+        // Initialize the aircraft list when the page loads
+        window.onload = updateAircraftList;
+    </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            margin-bottom: 5px;
+        }
+
+        .form-group input, .form-group select {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .form-group input.error, .form-group select.error {
+            border-color: red;
+        }
+
+        .error {
+            color: red;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        .form-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+            margin-right: 15px;
+        }
+
+        .form-row .form-group:last-child {
+            margin-right: 0;
+        }
+
+        button {
+            padding: 10px 15px;
+            font-size: 1em;
+            color: white;
+            background-color: #007bff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Aircraft Analysis Tool</h1>
+
+    {% with messages = get_flashed_messages(with_categories=True) %}
+        {% if messages %}
+            <ul>
+                {% for category, message in messages %}
+                    <li class="{{ category }}">{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+
+    <form action="{{ url_for('run_analysis') }}" method="POST">
+        <div class="form-group">
+            <label for="aircraft_type">Aircraft Type:</label>
+            <select name="aircraft_type" id="aircraft_type" onchange="updateAircraftList()" required>
+                <option value="fixed_wing" {{ 'selected' if aircraft_type == 'fixed_wing' else '' }}>Fixed-Wing</option>
+                <option value="quadcopter" {{ 'selected' if aircraft_type == 'quadcopter' else '' }}>Quadcopter</option>
+            </select>
+            {% if errors.get('aircraft_type') %}
+                <span class="error">{{ errors.get('aircraft_type') }}</span>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="aircraft_name">Aircraft Name:</label>
+            <select name="aircraft_name" id="aircraft_name" required>
+                <!-- Options will be populated dynamically -->
+                {% for name in (fixed_wing_list if aircraft_type == 'fixed_wing' else quadcopter_list) %}
+                    <option value="{{ name }}" {{ 'selected' if name == aircraft_name else '' }}>{{ name }}</option>
+                {% endfor %}
+            </select>
+            {% if errors.get('aircraft_name') %}
+                <span class="error">{{ errors.get('aircraft_name') }}</span>
+            {% endif %}
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="icao_code">ICAO Code:</label>
+                <input type="text" name="icao_code" id="icao_code" value="{{ icao_code }}" required class="{{ 'error' if errors.get('icao_code') else '' }}">
+                {% if errors.get('icao_code') %}
+                    <span class="error">{{ errors.get('icao_code') }}</span>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="box">Bounding Box:</label>
+                <input type="text" name="box" id="box" value="{{ box }}" placeholder="Format: lat1,lon1,lat2,lon2" required class="{{ 'error' if errors.get('box') else '' }}">
+                {% if errors.get('box') %}
+                    <span class="error">{{ errors.get('box') }}</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="initial_latitude">Initial Latitude:</label>
+                <input type="number" name="initial_latitude" id="initial_latitude" step="any" min="-90" max="90" value="{{ initial_latitude }}" required class="{{ 'error' if errors.get('initial_latitude') else '' }}">
+                {% if errors.get('initial_latitude') %}
+                    <span class="error">{{ errors.get('initial_latitude') }}</span>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="initial_longitude">Initial Longitude:</label>
+                <input type="number" name="initial_longitude" id="initial_longitude" step="any" min="-180" max="180" value="{{ initial_longitude }}" required class="{{ 'error' if errors.get('initial_longitude') else '' }}">
+                {% if errors.get('initial_longitude') %}
+                    <span class="error">{{ errors.get('initial_longitude') }}</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="heading">Heading:</label>
+                <input type="number" name="heading" id="heading" min="0" max="360" value="{{ heading }}" required class="{{ 'error' if errors.get('heading') else '' }}">
+                {% if errors.get('heading') %}
+                    <span class="error">{{ errors.get('heading') }}</span>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="speed">Initial Speed:</label>
+                <input type="number" name="speed" id="speed" min="0" value="{{ speed }}" required class="{{ 'error' if errors.get('speed') else '' }}">
+                {% if errors.get('speed') %}
+                    <span class="error">{{ errors.get('speed') }}</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <button type="button" onclick="fillDefaultValues()">Fill Default Values</button>
+        <button type="submit">Run Analysis</button>
+    </form>
+</body>
+</html>
