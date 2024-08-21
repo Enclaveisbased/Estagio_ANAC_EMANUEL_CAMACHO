@@ -15,6 +15,8 @@ import requests
 from geopy.distance import geodesic
 from geopy.point import Point
 import webbrowser
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # For session management
@@ -166,22 +168,35 @@ def run_analysis():
         oswald = aircraft_properties['Oswald Coefficient']
         ceiling = aircraft_properties['Ceiling']
         simresults = Simmpy.fix(TSL, PSL, initial_latitude, initial_longitude, heading, windspd, windhdg, ceiling, MTOM, AR, WA, Cd0, oswald, 0)
+        finalv = simresults[2][0]
+        distancetravelled = simresults[2][10]
     elif aircraft_type == 'quadcopter':
         MTOM = aircraft_properties['MTOM']
         A = aircraft_properties['Side area']
         Cd0 = aircraft_properties['Cd0']
         ceiling = aircraft_properties['Ceiling']
         simresults = Simmpy.quad(PSL, TSL, heading, initial_latitude, initial_longitude, windhdg, windspd, 0, speed, ceiling, MTOM, Cd0, A)
+        distancetravelled = simresults[2][5]
+        finalv = simresults[2][7]
 
-    ###### RESULTS SHOWING ###################################################################################
-
+    ### Extracting Results for Rendering ###
     final_latitude = simresults[0]
-    final_longitude = simresults[1]  
-    
-    
+    final_longitude = simresults[1]
+    falltime = simresults[2][1]
+    x = simresults[2][2]
+    y = simresults[2][3]
+    z = simresults[2][4]
     
 
+    # Convert numpy arrays to lists for passing to the template
+    dxv = x.tolist()
+    dyv = y.tolist()
+    dzv = z.tolist()
 
+    return render_template('results.html', finalv=finalv, falltime=falltime,
+                           dxv=dxv, dyv=dyv, dzv=dzv,
+                           initial_latitude=initial_latitude, initial_longitude=initial_longitude,
+                           final_latitude=final_latitude, final_longitude=final_longitude, distancetravelled=distancetravelled)
 
 
 
@@ -192,11 +207,9 @@ def run_analysis():
 
     #######################FINAL##############################
 
-    flash("Analysis completed successfully!", category='success')
     
-    return render_template('results.html', simresults=simresults)
 
-      
+
     
  
 

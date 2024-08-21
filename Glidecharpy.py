@@ -120,7 +120,17 @@ def glide_characteristics(Psl, Tsl, crafthdg, Whdg, Wspdkt, draft, hm, M, A, Sm,
     
     traveldistance = traveltime*cf.convvel(GS_reskthdg[0], 'kts', 'm/s')
     #print(traveltime, cf.convvel(GS_reskthdg[0], 'kts', 'm/s'), traveldistance)
-    #print('GS fixed wing', GS_reskthdg)
+    print('GS fixed wing', GS_reskthdg)
 
-    return [fpm, minfpm, gamma_bg, KTAS_bg, KTASminsinkrate, KCAS_bg, KCASver[Indd], KTASver[Indd], GS_reskthdg, traveltime, traveldistance]
+    tvec = np.linspace(0, traveltime, 100)
+    dxv = tvec*cf.convvel(GS_reskthdg[0], 'kts', 'm/s') * np.cos(np.pi/2 - np.deg2rad(GS_reskthdg[1]))
+    dzv = hm+tvec*cf.convvel(fpstruevspeed, 'ft/s', 'm/s') 
+    dyv = tvec*cf.convvel(GS_reskthdg[0], 'kts', 'm/s') * np.sin(np.pi/2 - np.deg2rad(GS_reskthdg[1]))
+    
+    print(dxv, dyv, dzv)
+
+
+    TAS_m = cf.convvel(TAS_bg, 'ft/s', 'm/s')
+
+    return [TAS_m, traveltime, dxv, dyv, dzv, KTASminsinkrate, KCAS_bg, KCASver[Indd], KTASver[Indd], GS_reskthdg, traveldistance]
 

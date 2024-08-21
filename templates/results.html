@@ -2,4 +2,151 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analysis Results</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        .results-container {
+            margin-bottom: 20px;
+        }
+
+        .result-item {
+            margin-bottom: 10px;
+        }
+
+        #map {
+            height: 400px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        #back-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1em;
+            cursor: pointer;
+            z-index: 1000;
+        }
+
+        #back-button:hover {
+            background-color: #0056b3;
+        }
+
+        #glidepath-plot {
+            max-width: 100%;
+            height: 500px;
+            margin-top: 20px;
+        }
+    </style>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <h1>Analysis Results</h1>
+
+    <div class="results-container">
+        <div class="result-item"><strong>Initial Latitude:</strong> {{ initial_latitude }}</div>
+        <div class="result-item"><strong>Initial Longitude:</strong> {{ initial_longitude }}</div>
+        <div class="result-item"><strong>Final Latitude:</strong> {{ final_latitude }}</div>
+        <div class="result-item"><strong>Final Longitude:</strong> {{ final_longitude }}</div>
+        <div class="result-item"><strong>Final Velocity:</strong> {{ finalv }} m/s</div>
+        <div class="result-item"><strong>Fall Time:</strong> {{ falltime }} s</div>
+        <div class="result-item"><strong>Ground distance:</strong> {{ distancetravelled }} m</div>
+    </div>
+
+    <div id="map"></div>
+
+    <!-- 3D Glide Path Plot -->
+    <div id="glidepath-plot"></div>
+
+    <!-- Back to Forms Button -->
+    <button id="back-button" onclick="window.location.href='/'">Back to Forms</button>
+
+    <script>
+        function initMap() {
+            // Initial and final coordinates
+            const initialLatLng = { lat: {{ initial_latitude }}, lng: {{ initial_longitude }} };
+            const finalLatLng = { lat: {{ final_latitude }}, lng: {{ final_longitude }} };
+
+            // Create the map centered on the initial location
+            const map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 12,
+                center: initialLatLng
+            });
+
+            // Marker for initial location
+            const initialMarker = new google.maps.Marker({
+                position: initialLatLng,
+                map: map,
+                title: 'Initial Location'
+            });
+
+            // Marker for final location
+            const finalMarker = new google.maps.Marker({
+                position: finalLatLng,
+                map: map,
+                title: 'Final Location'
+            });
+
+            // Draw a line between the initial and final locations
+            const flightPath = new google.maps.Polyline({
+                path: [initialLatLng, finalLatLng],
+                geodesic: true,
+                strokeColor: "#FF0000",
+                strokeOpacity: 1.0,
+                strokeWeight: 2
+            });
+            flightPath.setMap(map);
+        }
+
+        // Initialize Google Maps
+        document.addEventListener('DOMContentLoaded', function () {
+            initMap();
+        });
+
+        // 3D Glide Path Plot with Plotly
+        var trace1 = {
+            x: {{ dxv | safe }},
+            y: {{ dyv | safe }},
+            z: {{ dzv | safe }},
+            mode: 'lines',
+            type: 'scatter3d',
+            line: {
+                width: 6,
+                color: 'blue'
+            }
+        };
+
+        var data = [trace1];
+
+        var layout = {
+            title: '3D Glide Path',
+            scene: {
+                xaxis: {title: 'X (Horizontal Distance)'},
+                yaxis: {title: 'Y (Cross-track Distance)'},
+                zaxis: {title: 'Z (Altitude)'},
+            }
+        };
+
+        Plotly.newPlot('glidepath-plot', data, layout);
+    </script>
+
+    <!-- Load Google Maps API -->
+    <script async
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAj8I79Vxc8AjYw7Xmd0mZ-shFsjZtrUyU&callback=initMap">
+    </script>
+</body>
+</html>

@@ -57,6 +57,7 @@ def trajectoryprediction(Psl, Tsl, crafthdg, windhdg, Wspdkt, draft, vhor, hmax,
 
     vzf = -np.sqrt(M*g/k)*np.tanh(np.sqrt(k*g/M)*falltime)
 
+    vf = np.linalg.norm(vhormax+vzf)
 
     ############ Horizontal distance determination ########################################################################################################
 
@@ -69,8 +70,6 @@ def trajectoryprediction(Psl, Tsl, crafthdg, windhdg, Wspdkt, draft, vhor, hmax,
 
     dhorval = np.linalg.norm(dhor)
 
-    dz = -(M/k)*np.log(np.cosh(np.sqrt(k*g/M)*falltime))+hmax
-
     dx = dhor[0]
 
     dy = dhor[1]
@@ -79,6 +78,7 @@ def trajectoryprediction(Psl, Tsl, crafthdg, windhdg, Wspdkt, draft, vhor, hmax,
     #Important quantities
 
     terminalv = -np.sqrt(M*g/k)
+    
 
     
 
@@ -107,4 +107,11 @@ def trajectoryprediction(Psl, Tsl, crafthdg, windhdg, Wspdkt, draft, vhor, hmax,
     print('GS copter', gshdg, windhdg, windhdg, terminalv, Dzf, cf.convvel(vhormax, 'm/s', 'kts'))
 
 
-    return (falltime, terminalv, dhorval, gshdg)
+    tvec = np.linspace(0, falltime, 100)
+
+    dxv = ex_craft * (np.log(k*vhor*tvec+1))/k - windm[0]*tvec
+    dzv = -(M/k)*np.log(np.cosh(np.sqrt(k*g/M)*tvec))+hmax 
+    dyv = ey_craft * (np.log(k*vhor*tvec+1))/k  - windm[1]*tvec
+    print(dxv, dyv, dzv)
+
+    return (terminalv, falltime, dxv, dyv, dzv, dhorval, gshdg, vf)

@@ -41,13 +41,13 @@ def fix(TSL, PSL, initial_latitude, initial_longitude, aircrafthdg, windspd, win
 
     distance_traveledfx = resultfx[10]
 
-    finalposition = geodesic(meters=distance_traveledfx).destination(initial_position, resultfx[8][1])
+    finalposition = geodesic(meters=distance_traveledfx).destination(initial_position, resultfx[9][1])
     
 
 
-    webbrowser.open(f"https://www.google.com/maps?q={initial_latitude},{initial_longitude}")
+    #webbrowser.open(f"https://www.google.com/maps?q={initial_latitude},{initial_longitude}")
             
-    webbrowser.open(f"https://www.google.com/maps?q={finalposition[0]},{finalposition[1]}")
+    #webbrowser.open(f"https://www.google.com/maps?q={finalposition[0]},{finalposition[1]}")
 
     #Formato decimal do wgs84
     return(finalposition[0], finalposition[1], resultfx)
@@ -66,13 +66,13 @@ def quad(PSL, TSL, aircrafthdg, initial_latitude, initial_longitude, windhdg, wi
     resultquad = Ballisticpy.trajectoryprediction(PSL, TSL, aircrafthdg, windhdg, windspd, draft, vhor, ceiling, MTOM, Cd0, A)
     
 
-    distance_traveledq = resultquad[2]
+    distance_traveledq = resultquad[5]
     
     
-    finalposition = geodesic(meters=distance_traveledq).destination(initial_position, resultquad[2])
-    webbrowser.open(f"https://www.google.com/maps?q={initial_latitude},{initial_longitude}")
+    finalposition = geodesic(meters=distance_traveledq).destination(initial_position, resultquad[6])
+    #webbrowser.open(f"https://www.google.com/maps?q={initial_latitude},{initial_longitude}")
             
-    webbrowser.open(f"https://www.google.com/maps?q={finalposition[0]},{finalposition[1]}")
+    #webbrowser.open(f"https://www.google.com/maps?q={finalposition[0]},{finalposition[1]}")
   
     return(finalposition[0], finalposition[1], resultquad)
 
