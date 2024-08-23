@@ -52,7 +52,12 @@
             margin-top: 20px;
         }
     </style>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <!-- Plotly.js -->
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
     <h1>Analysis Results</h1>
@@ -62,9 +67,10 @@
         <div class="result-item"><strong>Initial Longitude:</strong> {{ initial_longitude }}</div>
         <div class="result-item"><strong>Final Latitude:</strong> {{ final_latitude }}</div>
         <div class="result-item"><strong>Final Longitude:</strong> {{ final_longitude }}</div>
-        <div class="result-item"><strong>Final Velocity:</strong> {{ finalv }} m/s</div>
-        <div class="result-item"><strong>Fall Time:</strong> {{ falltime }} s</div>
-        <div class="result-item"><strong>Ground distance:</strong> {{ distancetravelled }} m</div>
+        <div class="result-item"><strong>Final Velocity:</strong> {{ finalv|round(3) }} m/s</div>
+        <div class="result-item"><strong>Fall Time:</strong> {{ falltime|round(3) }} s</div>
+        <div class="result-item"><strong>Ground Distance:</strong> {{ distancetravelled }} m</div>
+        <div class="result-item"><strong>Final Kinetic Energy:</strong> {{ final_kinetic_energy }} J</div>
     </div>
 
     <div id="map"></div>
@@ -78,50 +84,69 @@
     <script>
         function initMap() {
             // Initial and final coordinates
-            const initialLatLng = { lat: {{ initial_latitude }}, lng: {{ initial_longitude }} };
-            const finalLatLng = { lat: {{ final_latitude }}, lng: {{ final_longitude }} };
+            const initialLatLng = [{{ initial_latitude }}, {{ initial_longitude }}];
+            const finalLatLng = [{{ final_latitude }}, {{ final_longitude }}];
 
             // Create the map centered on the initial location
-            const map = new google.maps.Map(document.getElementById('map'), {
-                zoom: 12,
-                center: initialLatLng
-            });
+            const map = L.map('map').setView(initialLatLng, 12);
+
+            // Add OpenStreetMap tiles
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
 
             // Marker for initial location
-            const initialMarker = new google.maps.Marker({
-                position: initialLatLng,
-                map: map,
-                title: 'Initial Location'
-            });
+            L.marker(initialLatLng).addTo(map)
+                .bindPopup('Initial Location')
+                .openPopup();
 
             // Marker for final location
-            const finalMarker = new google.maps.Marker({
-                position: finalLatLng,
-                map: map,
-                title: 'Final Location'
-            });
+            L.marker(finalLatLng).addTo(map)
+                .bindPopup('Final Location')
+                .openPopup();
 
             // Draw a line between the initial and final locations
-            const flightPath = new google.maps.Polyline({
-                path: [initialLatLng, finalLatLng],
-                geodesic: true,
-                strokeColor: "#FF0000",
-                strokeOpacity: 1.0,
-                strokeWeight: 2
-            });
-            flightPath.setMap(map);
+            L.polyline([initialLatLng, finalLatLng], {color: 'red'}).addTo(map);
+
+            // Extract and convert horizontal coordinates from the 3D glide path
+            var dxv = {{ dxv | safe }};
+            var dyv = {{ dyv | safe }};
+            var dzv = {{ dzv | safe }};
+
+            // Simple projection: assume dxv represents latitude changes and dyv represents longitude changes
+            var horizontalPath = dxv.map((x, i) => [
+                {{ initial_latitude }} + x * 0.00001, // Adjust scale factor as needed
+                {{ initial_longitude }} + dyv[i] * 0.00001 // Adjust scale factor as needed
+            ]);
+
+            // Draw the projected path on the map
+            L.polyline(horizontalPath, {color: 'blue', weight: 2}).addTo(map);
         }
 
-        // Initialize Google Maps
+        // Initialize map
         document.addEventListener('DOMContentLoaded', function () {
             initMap();
         });
 
+        // Round values to three decimal places
+        function roundToThreeDecimals(arr) {
+            return arr.map(val => parseFloat(val.toFixed(3)));
+        }
+
         // 3D Glide Path Plot with Plotly
+        var dxv = {{ dxv | safe }};
+        var dyv = {{ dyv | safe }};
+        var dzv = {{ dzv | safe }};
+
+        // Round the values
+        dxv = roundToThreeDecimals(dxv);
+        dyv = roundToThreeDecimals(dyv);
+        dzv = roundToThreeDecimals(dzv);
+
         var trace1 = {
-            x: {{ dxv | safe }},
-            y: {{ dyv | safe }},
-            z: {{ dzv | safe }},
+            x: dxv,
+            y: dyv,
+            z: dzv,
             mode: 'lines',
             type: 'scatter3d',
             line: {
@@ -135,18 +160,13 @@
         var layout = {
             title: '3D Glide Path',
             scene: {
-                xaxis: {title: 'X (Horizontal Distance)'},
-                yaxis: {title: 'Y (Cross-track Distance)'},
-                zaxis: {title: 'Z (Altitude)'},
+                xaxis: { title: 'X (Horizontal Distance)' },
+                yaxis: { title: 'Y (Cross-track Distance)' },
+                zaxis: { title: 'Z (Altitude)' },
             }
         };
 
         Plotly.newPlot('glidepath-plot', data, layout);
-    </script>
-
-    <!-- Load Google Maps API -->
-    <script async
-        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAj8I79Vxc8AjYw7Xmd0mZ-shFsjZtrUyU&callback=initMap">
     </script>
 </body>
 </html>

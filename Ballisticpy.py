@@ -104,7 +104,7 @@ def trajectoryprediction(Psl, Tsl, crafthdg, windhdg, Wspdkt, draft, vhor, hmax,
 
     gsnwd = np.rad2deg((np.pi / 2 - np.arctan2(ey_craft, ex_craft)))%360
 
-    print('GS copter', gshdg, windhdg, windhdg, terminalv, Dzf, cf.convvel(vhormax, 'm/s', 'kts'))
+    #print('GS copter', gshdg, windhdg, windhdg, terminalv, Dzf, cf.convvel(vhormax, 'm/s', 'kts'))
 
 
     tvec = np.linspace(0, falltime, 100)
@@ -112,6 +112,6 @@ def trajectoryprediction(Psl, Tsl, crafthdg, windhdg, Wspdkt, draft, vhor, hmax,
     dxv = ex_craft * (np.log(k*vhor*tvec+1))/k - windm[0]*tvec
     dzv = -(M/k)*np.log(np.cosh(np.sqrt(k*g/M)*tvec))+hmax 
     dyv = ey_craft * (np.log(k*vhor*tvec+1))/k  - windm[1]*tvec
-    print(dxv, dyv, dzv)
+    #print(dxv, dyv, dzv)
 
     return (terminalv, falltime, dxv, dyv, dzv, dhorval, gshdg, vf)

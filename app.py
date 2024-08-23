@@ -1,20 +1,14 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
+
 import pandas as pd
+import json
 import requests
 from geopy.distance import geodesic
 import Simmpy
 import numpy as np
-import sys
-import os
-import scipy.constants as sc
-import matplotlib.pyplot as plt
 import Unitconversions as cf
 import Glidecharpy
 import Ballisticpy
-import requests
-from geopy.distance import geodesic
-from geopy.point import Point
-import webbrowser
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
@@ -26,15 +20,12 @@ file_path = 'DATASHEET.xlsx'
 fixed_wing_df = pd.read_excel(file_path, sheet_name='fixed', header=None, names=['Name', 'Cruise speed', 'Max speed', 'Endurance', 'Ceiling', 'MTOM', 'Aspect Ratio', 'Wing Area', 'Cd0', 'Oswald Coefficient'])
 quadcopter_df = pd.read_excel(file_path, sheet_name='quad', header=None, names=['Name', 'Ceiling', 'Max Wind Resistance', 'MTOM', 'Cd0', 'Max speed', 'Side area'])
 
-
 @app.route('/')
 def index():
     return render_template('index.html',
                            fixed_wing_list=fixed_wing_df['Name'].tolist(),
                            quadcopter_list=quadcopter_df['Name'].tolist(),
                            errors={})
-
-
 
 @app.route('/run_analysis', methods=['POST'])
 def run_analysis():
@@ -111,7 +102,6 @@ def run_analysis():
             errors['speed'] = "Speed must be a valid number."
 
     if errors:
-        # If there are errors, re-render the form with error messages
         return render_template('index.html', 
                                aircraft_type=aircraft_type, aircraft_name=aircraft_name,
                                icao_code=icao_code, box=box, initial_latitude=initial_latitude,
@@ -119,17 +109,9 @@ def run_analysis():
                                errors=errors, fixed_wing_list=fixed_wing_df['Name'].tolist(),
                                quadcopter_list=quadcopter_df['Name'].tolist())
     
- ### METAR AQUISITION
-
-    # Parse and format the bounding box for API request
-    if box:
-        box_parts = list(map(float, box.split(',')))
-        box_formatted = ",".join(map(str, box_parts))
-    else:
-        box_formatted = ""
-
-    # METAR Acquisition
+    ### METAR AQUISITION
     try:
+        box_formatted = ",".join(map(str, list(map(float, box.split(','))))) if box else ""
         METARres = requests.get(f"https://aviationweather.gov/api/data/metar?ids={icao_code}&format=geojson&bbox={box_formatted}")
         METARres.raise_for_status()
         METAR = METARres.json()
@@ -141,8 +123,6 @@ def run_analysis():
     except Exception as e:
         flash(f"An error occurred while fetching METAR data: {e}", category='error')
         return redirect(url_for('index'))
-
-
 
     ### SPECIFIC AIRCRAFT DATA RETRIEVAL
     if aircraft_type == 'fixed_wing':
@@ -168,52 +148,34 @@ def run_analysis():
         oswald = aircraft_properties['Oswald Coefficient']
         ceiling = aircraft_properties['Ceiling']
         simresults = Simmpy.fix(TSL, PSL, initial_latitude, initial_longitude, heading, windspd, windhdg, ceiling, MTOM, AR, WA, Cd0, oswald, 0)
-        finalv = simresults[2][0]
-        distancetravelled = simresults[2][10]
+        finalv = np.round(simresults[2][0], decimals=3)
+        distancetravelled = np.round(simresults[2][10], decimals=3)
     elif aircraft_type == 'quadcopter':
         MTOM = aircraft_properties['MTOM']
         A = aircraft_properties['Side area']
         Cd0 = aircraft_properties['Cd0']
         ceiling = aircraft_properties['Ceiling']
         simresults = Simmpy.quad(PSL, TSL, heading, initial_latitude, initial_longitude, windhdg, windspd, 0, speed, ceiling, MTOM, Cd0, A)
-        distancetravelled = simresults[2][5]
-        finalv = simresults[2][7]
+        distancetravelled = np.round(simresults[2][5], decimals=3)
+        finalv = np.round(simresults[2][7], decimals=3)
 
     ### Extracting Results for Rendering ###
     final_latitude = simresults[0]
     final_longitude = simresults[1]
-    falltime = simresults[2][1]
-    x = simresults[2][2]
-    y = simresults[2][3]
-    z = simresults[2][4]
-    
+    falltime = np.round(simresults[2][1], decimals=3)
+    x = np.round(simresults[2][2], decimals=3)
+    y = np.round(simresults[2][3], decimals=3)
+    z = np.round(simresults[2][4], decimals=3)
+    final_kinetic_energy = np.round(0.5*MTOM*finalv**2, decimals=3)
 
-    # Convert numpy arrays to lists for passing to the template
     dxv = x.tolist()
     dyv = y.tolist()
     dzv = z.tolist()
 
     return render_template('results.html', finalv=finalv, falltime=falltime,
-                           dxv=dxv, dyv=dyv, dzv=dzv,
+                           dxv=json.dumps(dxv), dyv=json.dumps(dyv), dzv=json.dumps(dzv),
                            initial_latitude=initial_latitude, initial_longitude=initial_longitude,
-                           final_latitude=final_latitude, final_longitude=final_longitude, distancetravelled=distancetravelled)
-
-
-
-
-
-
-
-
-    #######################FINAL##############################
-
-    
-
-
-    
- 
-
-    
+                           final_latitude=final_latitude, final_longitude=final_longitude, distancetravelled=distancetravelled, final_kinetic_energy = final_kinetic_energy)
 
 if __name__ == '__main__':
     app.run(debug=True)
