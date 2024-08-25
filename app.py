@@ -1,24 +1,19 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
-
 import pandas as pd
 import json
 import requests
-from geopy.distance import geodesic
-import Simmpy
 import numpy as np
-import Unitconversions as cf
-import Glidecharpy
-import Ballisticpy
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
+import Simmpy
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # For session management
 
-# Dummy data
 file_path = 'DATASHEET.xlsx'
-fixed_wing_df = pd.read_excel(file_path, sheet_name='fixed', header=None, names=['Name', 'Cruise speed', 'Max speed', 'Endurance', 'Ceiling', 'MTOM', 'Aspect Ratio', 'Wing Area', 'Cd0', 'Oswald Coefficient'])
-quadcopter_df = pd.read_excel(file_path, sheet_name='quad', header=None, names=['Name', 'Ceiling', 'Max Wind Resistance', 'MTOM', 'Cd0', 'Max speed', 'Side area'])
+fixed_wing_df = pd.read_excel(file_path, sheet_name='fixed', header=None, names=[
+    'Name', 'Cruise speed', 'Max speed', 'Endurance', 'Ceiling', 'MTOM', 
+    'Aspect Ratio', 'Wing Area', 'Cd0', 'Oswald Coefficient'])
+quadcopter_df = pd.read_excel(file_path, sheet_name='quad', header=None, names=[
+    'Name', 'Ceiling', 'Max Wind Resistance', 'MTOM', 'Cd0', 'Max speed', 'Side area'])
 
 @app.route('/')
 def index():
@@ -175,7 +170,97 @@ def run_analysis():
     return render_template('results.html', finalv=finalv, falltime=falltime,
                            dxv=json.dumps(dxv), dyv=json.dumps(dyv), dzv=json.dumps(dzv),
                            initial_latitude=initial_latitude, initial_longitude=initial_longitude,
-                           final_latitude=final_latitude, final_longitude=final_longitude, distancetravelled=distancetravelled, final_kinetic_energy = final_kinetic_energy)
+                           final_latitude=final_latitude, final_longitude=final_longitude, distancetravelled=distancetravelled, final_kinetic_energy=final_kinetic_energy)
+
+@app.route('/manage_aircraft')
+def manage_aircraft():
+    return render_template('manage_aircraft.html', 
+                           fixed_wing_list=fixed_wing_df.to_dict(orient='records'), 
+                           quadcopter_list=quadcopter_df.to_dict(orient='records'))
+
+@app.route('/add_aircraft', methods=['POST'])
+def add_aircraft():
+    aircraft_type = request.form.get('aircraft_type')
+    aircraft_data = {
+        'Name': request.form.get('Name'),
+        'Cruise speed': request.form.get('Cruise speed'),
+        'Max speed': request.form.get('Max speed'),
+        'Endurance': request.form.get('Endurance'),
+        'Ceiling': request.form.get('Ceiling'),
+        'MTOM': request.form.get('MTOM'),
+        'Aspect Ratio': request.form.get('Aspect Ratio'),
+        'Wing Area': request.form.get('Wing Area'),
+        'Cd0': request.form.get('Cd0'),
+        'Oswald Coefficient': request.form.get('Oswald Coefficient'),
+        'Max Wind Resistance': request.form.get('Max Wind Resistance'),
+        'Side area': request.form.get('Side area')
+    }
+
+    global fixed_wing_df, quadcopter_df
+
+    if aircraft_type == 'fixed_wing':
+        new_row = pd.DataFrame([aircraft_data])
+        fixed_wing_df = pd.concat([fixed_wing_df, new_row], ignore_index=True)
+        fixed_wing_df.to_excel(file_path, sheet_name='fixed', index=False)
+    elif aircraft_type == 'quadcopter':
+        new_row = pd.DataFrame([aircraft_data])
+        quadcopter_df = pd.concat([quadcopter_df, new_row], ignore_index=True)
+        quadcopter_df.to_excel(file_path, sheet_name='quad', index=False)
+    else:
+        flash("Invalid aircraft type selected.", category='error')
+
+    return redirect(url_for('manage_aircraft'))
+
+@app.route('/edit_aircraft/<string:aircraft_type>/<int:index>', methods=['GET', 'POST'])
+def edit_aircraft(aircraft_type, index):
+    global fixed_wing_df, quadcopter_df
+    
+    if request.method == 'POST':
+        updated_data = {k: v for k, v in request.form.items() if k not in ['aircraft_type', 'index']}
+        
+        try:
+            if aircraft_type == 'fixed_wing':
+                for key, value in updated_data.items():
+                    fixed_wing_df.at[index, key] = value
+                fixed_wing_df.to_excel(file_path, sheet_name='fixed', index=False)
+            elif aircraft_type == 'quadcopter':
+                for key, value in updated_data.items():
+                    quadcopter_df.at[index, key] = value
+                quadcopter_df.to_excel(file_path, sheet_name='quad', index=False)
+            flash('Aircraft updated successfully!', 'success')
+        except Exception as e:
+            flash(f"An error occurred while updating the aircraft: {e}", 'error')
+        
+        return redirect(url_for('manage_aircraft'))
+    
+    # Prepare the data for rendering in the edit form
+    if aircraft_type == 'fixed_wing':
+        aircraft_data = fixed_wing_df.iloc[index].to_dict()
+    elif aircraft_type == 'quadcopter':
+        aircraft_data = quadcopter_df.iloc[index].to_dict()
+    
+    return render_template('manage_aircraft.html',
+                           edit_mode=True,
+                           aircraft_type=aircraft_type,
+                           index=index,
+                           aircraft_data=aircraft_data,
+                           fixed_wing_list=fixed_wing_df.to_dict(orient='records'),
+                           quadcopter_list=quadcopter_df.to_dict(orient='records'))
+
+@app.route('/delete_aircraft/<string:aircraft_type>/<int:index>', methods=['POST'])
+def delete_aircraft(aircraft_type, index):
+    global fixed_wing_df, quadcopter_df
+
+    if aircraft_type == 'fixed_wing':
+        fixed_wing_df = fixed_wing_df.drop(index).reset_index(drop=True)
+        fixed_wing_df.to_excel(file_path, sheet_name='fixed', index=False)
+    elif aircraft_type == 'quadcopter':
+        quadcopter_df = quadcopter_df.drop(index).reset_index(drop=True)
+        quadcopter_df.to_excel(file_path, sheet_name='quad', index=False)
+    else:
+        flash("Invalid aircraft type selected.", category='error')
+
+    return redirect(url_for('manage_aircraft'))
 
 if __name__ == '__main__':
     app.run(debug=True)

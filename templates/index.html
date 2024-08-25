@@ -33,6 +33,15 @@
             }
         }
 
+        function fillDefaults() {
+            document.getElementById('box').value = '38.70603814374191,-9.169521188831476,38.75571945218928,-9.12179932887582';
+            document.getElementById('initial_latitude').value = '38.772044563205625';
+            document.getElementById('initial_longitude').value = '-9.125695992070062';
+            document.getElementById('speed').value = '10';
+            document.getElementById('icao_code').value = 'LPPT';
+            document.getElementById('heading').value = '360';
+        }
+        
         // Initialize the aircraft list when the page loads
         window.onload = updateAircraftList;
     </script>
@@ -118,6 +127,23 @@
 
         .default-values-button:hover {
             background-color: #218838;
+        }
+
+        .aircraft-data-button {
+            display: inline-block;
+            padding: 10px 15px;
+            font-size: 1em;
+            color: rgb(255, 255, 255);
+            background-color: #3128a7;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            margin-top: 20px;
+        }
+
+        .aircraft-data-button:hover {
+            background-color: #212888;
         }
     </style>
 </head>
@@ -215,6 +241,7 @@
 
         <button type="submit">Run Analysis</button>
         <a href="#" class="default-values-button" onclick="fillDefaults()">Fill Default Values</a>
+        <a href="{{ url_for('manage_aircraft') }}" class="aircraft-data-button">Manage Aircraft Data</a>
     </form>
 
     <script>

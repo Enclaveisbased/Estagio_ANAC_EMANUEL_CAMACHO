@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Aircraft</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ccc;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        form {
+            display: inline-block;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input[type="text"], select {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+        }
+        input[type="submit"], button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+        }
+        input[type="submit"]:hover, button:hover {
+            background-color: #45a049;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Manage Aircraft</h1>
+
+    <!-- Fixed-Wing Aircraft Section -->
+    <h2>Fixed-Wing Aircraft</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Cruise Speed</th>
+                <th>Max Speed</th>
+                <th>Endurance</th>
+                <th>Ceiling</th>
+                <th>MTOM</th>
+                <th>Aspect Ratio</th>
+                <th>Wing Area</th>
+                <th>Cd0</th>
+                <th>Oswald Coefficient</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for aircraft in fixed_wing_list %}
+            <tr>
+                <td>{{ aircraft.Name }}</td>
+                <td>{{ aircraft['Cruise speed'] }}</td>
+                <td>{{ aircraft['Max speed'] }}</td>
+                <td>{{ aircraft.Endurance }}</td>
+                <td>{{ aircraft.Ceiling }}</td>
+                <td>{{ aircraft.MTOM }}</td>
+                <td>{{ aircraft['Aspect Ratio'] }}</td>
+                <td>{{ aircraft['Wing Area'] }}</td>
+                <td>{{ aircraft.Cd0 }}</td>
+                <td>{{ aircraft['Oswald Coefficient'] }}</td>
+                <td>
+                    <form action="{{ url_for('edit_aircraft', aircraft_type='fixed_wing', index=loop.index0) }}" method="post">
+                        <input type="submit" value="Edit">
+                    </form>
+                    <form action="{{ url_for('delete_aircraft', aircraft_type='fixed_wing', index=loop.index0) }}" method="post">
+                        <input type="submit" value="Delete">
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Quadcopter Aircraft Section -->
+    <h2>Quadcopter Aircraft</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Ceiling</th>
+                <th>Max Wind Resistance</th>
+                <th>MTOM</th>
+                <th>Cd0</th>
+                <th>Max Speed</th>
+                <th>Side Area</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for aircraft in quadcopter_list %}
+            <tr>
+                <td>{{ aircraft.Name }}</td>
+                <td>{{ aircraft.Ceiling }}</td>
+                <td>{{ aircraft['Max Wind Resistance'] }}</td>
+                <td>{{ aircraft.MTOM }}</td>
+                <td>{{ aircraft.Cd0 }}</td>
+                <td>{{ aircraft['Max speed'] }}</td>
+                <td>{{ aircraft['Side area'] }}</td>
+                <td>
+                    <form action="{{ url_for('edit_aircraft', aircraft_type='quadcopter', index=loop.index0) }}" method="post">
+                        <input type="submit" value="Edit">
+                    </form>
+                    <form action="{{ url_for('delete_aircraft', aircraft_type='quadcopter', index=loop.index0) }}" method="post">
+                        <input type="submit" value="Delete">
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Add New Aircraft Section -->
+    <h2>Add New Aircraft</h2>
+    <form action="{{ url_for('add_aircraft') }}" method="post">
+        <div class="form-group">
+            <label for="aircraft_type">Aircraft Type:</label>
+            <select name="aircraft_type" id="aircraft_type" onchange="toggleFields()">
+                <option value="fixed_wing">Fixed-Wing</option>
+                <option value="quadcopter">Quadcopter</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="name">Name:</label>
+            <input type="text" name="Name" id="name" required>
+        </div>
+
+        <!-- Fixed-Wing Specific Fields -->
+        <div id="fixed-wing-fields" class="hidden">
+            <div class="form-group">
+                <label for="cruise_speed">Cruise Speed:</label>
+                <input type="text" name="Cruise speed" id="cruise_speed">
+            </div>
+            <div class="form-group">
+                <label for="max_speed">Max Speed:</label>
+                <input type="text" name="Max speed" id="max_speed">
+            </div>
+            <div class="form-group">
+                <label for="endurance">Endurance:</label>
+                <input type="text" name="Endurance" id="endurance">
+            </div>
+            <div class="form-group">
+                <label for="ceiling">Ceiling:</label>
+                <input type="text" name="Ceiling" id="ceiling">
+            </div>
+            <div class="form-group">
+                <label for="mtom">MTOM:</label>
+                <input type="text" name="MTOM" id="mtom">
+            </div>
+            <div class="form-group">
+                <label for="aspect_ratio">Aspect Ratio:</label>
+                <input type="text" name="Aspect Ratio" id="aspect_ratio">
+            </div>
+            <div class="form-group">
+                <label for="wing_area">Wing Area:</label>
+                <input type="text" name="Wing Area" id="wing_area">
+            </div>
+            <div class="form-group">
+                <label for="cd0">Cd0:</label>
+                <input type="text" name="Cd0" id="cd0">
+            </div>
+            <div class="form-group">
+                <label for="oswald">Oswald Coefficient:</label>
+                <input type="text" name="Oswald Coefficient" id="oswald">
+            </div>
+        </div>
+
+        <!-- Quadcopter Specific Fields -->
+        <div id="quadcopter-fields" class="hidden">
+            <div class="form-group">
+                <label for="max_wind_resistance">Max Wind Resistance:</label>
+                <input type="text" name="Max Wind Resistance" id="max_wind_resistance">
+            </div>
+            <div class="form-group">
+                <label for="side_area">Side Area:</label>
+                <input type="text" name="Side area" id="side_area">
+            </div>
+        </div>
+
+        <input type="submit" value="Add Aircraft">
+    </form>
+
+    <!-- Edit Aircraft Section (conditionally rendered) -->
+    {% if edit_mode %}
+        <h2>Edit Aircraft</h2>
+        <form method="POST" action="{{ url_for('edit_aircraft', aircraft_type=aircraft_type, index=index) }}">
+            <input type="hidden" name="aircraft_type" value="{{ aircraft_type }}">
+            <input type="hidden" name="index" value="{{ index }}">
+
+            {% for key, value in aircraft_data.items() %}
+                <div class="form-group">
+                    <label for="{{ key }}">{{ key }}:</label>
+                    <input type="text" id="{{ key }}" name="{{ key }}" value="{{ value }}">
+                </div>
+            {% endfor %}
+            
+            <button type="submit">Save Changes</button>
+        </form>
+    {% endif %}
+
+    
+
+    <a href="{{ url_for('index') }}">Back to Home</a>
+
+    <script>
+        function toggleFields() {
+            const aircraftType = document.getElementById('aircraft_type').value;
+            document.getElementById('fixed-wing-fields').classList.toggle('hidden', aircraftType !== 'fixed_wing');
+            document.getElementById('quadcopter-fields').classList.toggle('hidden', aircraftType !== 'quadcopter');
+        }
+
+        // Initial call to set correct visibility on page load
+        toggleFields();
+    </script>
+</body>
+</html>

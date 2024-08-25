@@ -108,20 +108,28 @@
             // Draw a line between the initial and final locations
             L.polyline([initialLatLng, finalLatLng], {color: 'red'}).addTo(map);
 
+            const earthRadius = 6378137
+
             // Extract and convert horizontal coordinates from the 3D glide path
             var dxv = {{ dxv | safe }};
             var dyv = {{ dyv | safe }};
             var dzv = {{ dzv | safe }};
 
             // Simple projection: assume dxv represents latitude changes and dyv represents longitude changes
-            var horizontalPath = dxv.map((x, i) => [
-                {{ initial_latitude }} + x * 0.00001, // Adjust scale factor as needed
-                {{ initial_longitude }} + dyv[i] * 0.00001 // Adjust scale factor as needed
-            ]);
+            var horizontalPath = dxv.map((dx, i) => {
+            // Calculate new latitude
+            const deltaLat = dyv[i] / earthRadius * (180 / Math.PI);
+            // Calculate new longitude with latitude adjustment
+            const deltaLon = dx / (earthRadius * Math.cos(initialLatLng[0] * Math.PI / 180)) * (180 / Math.PI);
+            return [
+                initialLatLng[0] + deltaLat,
+                initialLatLng[1] + deltaLon
+            ];
+        });
 
-            // Draw the projected path on the map
-            L.polyline(horizontalPath, {color: 'blue', weight: 2}).addTo(map);
-        }
+        // Draw the projected path on the map
+        L.polyline(horizontalPath, {color: 'blue', weight: 2}).addTo(map);
+    }
 
         // Initialize map
         document.addEventListener('DOMContentLoaded', function () {
