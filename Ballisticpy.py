@@ -7,7 +7,7 @@ import scipy.integrate
 import Unitconversions as cf
 from scipy.optimize import fsolve
 g = 9.81
-def trajectoryprediction(Psl, Tsl, crafthdg, windhdg, Wspdkt, draft, vhor, hmax, M, Cd, A):
+def trajectoryprediction(Psl, Tsl, crafthdg, windhdg, Wspdkt, draft, vhor, hmax, M, Cd, A, As):
 
     if windhdg == 'VRB' :
 
@@ -49,11 +49,13 @@ def trajectoryprediction(Psl, Tsl, crafthdg, windhdg, Wspdkt, draft, vhor, hmax,
 
     k = 0.5*rho*Cd*A
 
+    ks = 0.5*rho*Cd*As # Side area coefficient
+
     ############## Motion quantities #####################################################################################################################
     
     falltime = np.arccosh(np.e**(hmax*k/M))*np.sqrt(M/(g*k))
 
-    vhormax = 1/((1/vhor)+k*falltime)
+    vhormax = 1/((1/vhor)+ks*falltime)
 
     vzf = -np.sqrt(M*g/k)*np.tanh(np.sqrt(k*g/M)*falltime)
 
@@ -62,7 +64,7 @@ def trajectoryprediction(Psl, Tsl, crafthdg, windhdg, Wspdkt, draft, vhor, hmax,
     ############ Horizontal distance determination ########################################################################################################
 
 
-    dhordragonly = np.array([ex_craft, ey_craft])*(np.log(k*vhor*falltime+1))/k
+    dhordragonly = np.array([ex_craft, ey_craft])*(np.log(ks*vhor*falltime+1))/ks
 
     dhorduetowind = windm*falltime
 
@@ -82,8 +84,8 @@ def trajectoryprediction(Psl, Tsl, crafthdg, windhdg, Wspdkt, draft, vhor, hmax,
 
     
 
-    Dxf = k*ex_craft*vhormax**2
-    Dyf = k*ey_craft*vhormax**2
+    Dxf = ks*ex_craft*vhormax**2
+    Dyf = ks*ey_craft*vhormax**2
     Dzf = -k*terminalv**2
 
 
@@ -109,9 +111,9 @@ def trajectoryprediction(Psl, Tsl, crafthdg, windhdg, Wspdkt, draft, vhor, hmax,
 
     tvec = np.linspace(0, falltime, 100)
 
-    dxv = ex_craft * (np.log(k*vhor*tvec+1))/k - windm[0]*tvec
+    dxv = ex_craft * (np.log(ks*vhor*tvec+1))/ks - windm[0]*tvec
     dzv = -(M/k)*np.log(np.cosh(np.sqrt(k*g/M)*tvec))+hmax 
-    dyv = ey_craft * (np.log(k*vhor*tvec+1))/k  - windm[1]*tvec
-    #print(dxv, dyv, dzv)
+    dyv = ey_craft * (np.log(ks*vhor*tvec+1))/ks  - windm[1]*tvec
+    print(dxv, dyv, dzv, k, ks)
 
     return (terminalv, falltime, dxv, dyv, dzv, dhorval, gshdg, vf)

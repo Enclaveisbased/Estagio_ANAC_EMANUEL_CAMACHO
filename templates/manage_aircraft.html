@@ -62,86 +62,86 @@
     <h1>Manage Aircraft</h1>
 
     <!-- Fixed-Wing Aircraft Section -->
-    <h2>Fixed-Wing Aircraft</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Cruise Speed</th>
-                <th>Max Speed</th>
-                <th>Endurance</th>
-                <th>Ceiling</th>
-                <th>MTOM</th>
-                <th>Aspect Ratio</th>
-                <th>Wing Area</th>
-                <th>Cd0</th>
-                <th>Oswald Coefficient</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for aircraft in fixed_wing_list %}
-            <tr>
-                <td>{{ aircraft.Name }}</td>
-                <td>{{ aircraft['Cruise speed'] }}</td>
-                <td>{{ aircraft['Max speed'] }}</td>
-                <td>{{ aircraft.Endurance }}</td>
-                <td>{{ aircraft.Ceiling }}</td>
-                <td>{{ aircraft.MTOM }}</td>
-                <td>{{ aircraft['Aspect Ratio'] }}</td>
-                <td>{{ aircraft['Wing Area'] }}</td>
-                <td>{{ aircraft.Cd0 }}</td>
-                <td>{{ aircraft['Oswald Coefficient'] }}</td>
-                <td>
-                    <form action="{{ url_for('edit_aircraft', aircraft_type='fixed_wing', index=loop.index0) }}" method="post">
-                        <input type="submit" value="Edit">
-                    </form>
-                    <form action="{{ url_for('delete_aircraft', aircraft_type='fixed_wing', index=loop.index0) }}" method="post">
-                        <input type="submit" value="Delete">
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<h2>Fixed-Wing Aircraft</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Cruise Speed</th>
+            <th>Max Speed</th>
+            <th>Endurance</th>
+            <th>Ceiling</th>
+            <th>MTOM</th>
+            <th>Aspect Ratio</th>
+            <th>Wing Area</th>
+            <th>Cd0</th>
+            <th>Oswald Coefficient</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for aircraft in fixed_wing_list %}
+        <tr>
+            <td>{{ aircraft.Name }}</td>
+            <td>{{ aircraft['Cruise speed'] }}</td>
+            <td>{{ aircraft['Max speed'] }}</td>
+            <td>{{ aircraft.Endurance }}</td>
+            <td>{{ aircraft.Ceiling }}</td>
+            <td>{{ aircraft.MTOM }}</td>
+            <td>{{ aircraft['Aspect Ratio'] }}</td>
+            <td>{{ aircraft['Wing Area'] }}</td>
+            <td>{{ aircraft.Cd0 }}</td>
+            <td>{{ aircraft['Oswald Coefficient'] }}</td>
+            <td>
+                <form action="{{ url_for('edit_aircraft', aircraft_type='fixed_wing', name=aircraft.Name) }}" method="post">
+                    <input type="submit" value="Edit">
+                </form>
+                <form action="{{ url_for('delete_aircraft', aircraft_type='fixed_wing', name=aircraft.Name) }}" method="post">
+                    <input type="submit" value="Delete">
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
 
-    <!-- Quadcopter Aircraft Section -->
-    <h2>Quadcopter Aircraft</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Ceiling</th>
-                <th>Max Wind Resistance</th>
-                <th>MTOM</th>
-                <th>Cd0</th>
-                <th>Max Speed</th>
-                <th>Side Area</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for aircraft in quadcopter_list %}
-            <tr>
-                <td>{{ aircraft.Name }}</td>
-                <td>{{ aircraft.Ceiling }}</td>
-                <td>{{ aircraft['Max Wind Resistance'] }}</td>
-                <td>{{ aircraft.MTOM }}</td>
-                <td>{{ aircraft.Cd0 }}</td>
-                <td>{{ aircraft['Max speed'] }}</td>
-                <td>{{ aircraft['Side area'] }}</td>
-                <td>
-                    <form action="{{ url_for('edit_aircraft', aircraft_type='quadcopter', index=loop.index0) }}" method="post">
-                        <input type="submit" value="Edit">
-                    </form>
-                    <form action="{{ url_for('delete_aircraft', aircraft_type='quadcopter', index=loop.index0) }}" method="post">
-                        <input type="submit" value="Delete">
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<!-- Quadcopter Aircraft Section -->
+<h2>Quadcopter Aircraft</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Ceiling</th>
+            <th>Max Wind Resistance</th>
+            <th>MTOM</th>
+            <th>Cd0</th>
+            <th>Max Speed</th>
+            <th>Side Area</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for aircraft in quadcopter_list %}
+        <tr>
+            <td>{{ aircraft.Name }}</td>
+            <td>{{ aircraft.Ceiling }}</td>
+            <td>{{ aircraft['Max Wind Resistance'] }}</td>
+            <td>{{ aircraft.MTOM }}</td>
+            <td>{{ aircraft.Cd0 }}</td>
+            <td>{{ aircraft['Max speed'] }}</td>
+            <td>{{ aircraft['Side area'] }}</td>
+            <td>
+                <form action="{{ url_for('edit_aircraft', aircraft_type='quadcopter', name=aircraft.Name) }}" method="post">
+                    <input type="submit" value="Edit">
+                </form>
+                <form action="{{ url_for('delete_aircraft', aircraft_type='quadcopter', name=aircraft.Name) }}" method="post">
+                    <input type="submit" value="Delete">
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
 
     <!-- Add New Aircraft Section -->
     <h2>Add New Aircraft</h2>
@@ -159,54 +159,82 @@
         </div>
 
         <!-- Fixed-Wing Specific Fields -->
-        <div id="fixed-wing-fields" class="hidden">
+        <div id="fixed-wing-fields">
             <div class="form-group">
-                <label for="cruise_speed">Cruise Speed:</label>
-                <input type="text" name="Cruise speed" id="cruise_speed">
+                <label for="fixed_cruise_speed">Cruise Speed:</label>
+                <input type="text" name="Cruise speed" id="fixed_cruise_speed">
             </div>
             <div class="form-group">
-                <label for="max_speed">Max Speed:</label>
-                <input type="text" name="Max speed" id="max_speed">
+                <label for="fixed_max_speed">Max Speed:</label>
+                <input type="text" name="Max speed" id="fixed_max_speed">
             </div>
             <div class="form-group">
-                <label for="endurance">Endurance:</label>
-                <input type="text" name="Endurance" id="endurance">
+                <label for="fixed_endurance">Endurance:</label>
+                <input type="text" name="Endurance" id="fixed_endurance">
             </div>
             <div class="form-group">
-                <label for="ceiling">Ceiling:</label>
-                <input type="text" name="Ceiling" id="ceiling">
+                <label for="fixed_ceiling">Ceiling:</label>
+                <input type="text" name="Ceiling" id="fixed_ceiling">
             </div>
             <div class="form-group">
-                <label for="mtom">MTOM:</label>
-                <input type="text" name="MTOM" id="mtom">
+                <label for="fixed_mtom">MTOM:</label>
+                <input type="text" name="MTOM" id="fixed_mtom">
             </div>
             <div class="form-group">
-                <label for="aspect_ratio">Aspect Ratio:</label>
-                <input type="text" name="Aspect Ratio" id="aspect_ratio">
+                <label for="fixed_aspect_ratio">Aspect Ratio:</label>
+                <input type="text" name="Aspect Ratio" id="fixed_aspect_ratio">
             </div>
             <div class="form-group">
-                <label for="wing_area">Wing Area:</label>
-                <input type="text" name="Wing Area" id="wing_area">
+                <label for="fixed_wing_area">Wing Area:</label>
+                <input type="text" name="Wing Area" id="fixed_wing_area">
             </div>
             <div class="form-group">
-                <label for="cd0">Cd0:</label>
-                <input type="text" name="Cd0" id="cd0">
+                <label for="fixed_cd0">Cd0:</label>
+                <input type="text" name="Cd0" id="fixed_cd0">
             </div>
             <div class="form-group">
-                <label for="oswald">Oswald Coefficient:</label>
-                <input type="text" name="Oswald Coefficient" id="oswald">
+                <label for="fixed_oswald">Oswald Coefficient:</label>
+                <input type="text" name="Oswald Coefficient" id="fixed_oswald">
             </div>
         </div>
 
         <!-- Quadcopter Specific Fields -->
         <div id="quadcopter-fields" class="hidden">
             <div class="form-group">
-                <label for="max_wind_resistance">Max Wind Resistance:</label>
-                <input type="text" name="Max Wind Resistance" id="max_wind_resistance">
+                <label for="quad_max_wind_resistance">Max Wind Resistance:</label>
+                <input type="text" name="Max Wind Resistance" id="quad_max_wind_resistance">
             </div>
             <div class="form-group">
-                <label for="side_area">Side Area:</label>
-                <input type="text" name="Side area" id="side_area">
+                <label for="quad_side_area">Side Area:</label>
+                <input type="text" name="Side area" id="quad_side_area">
+            </div>
+            <div class="form-group">
+                <label for="quad_top_area">Top Area:</label>
+                <input type="text" name="Top Area" id="quad_top_area">
+            </div>
+            <div class="form-group">
+                <label for="quad_cruise_speed">Cruise Speed:</label>
+                <input type="text" name="Cruise speed" id="quad_cruise_speed">
+            </div>
+            <div class="form-group">
+                <label for="quad_max_speed">Max Speed:</label>
+                <input type="text" name="Max speed" id="quad_max_speed">
+            </div>
+            <div class="form-group">
+                <label for="quad_endurance">Endurance:</label>
+                <input type="text" name="Endurance" id="quad_endurance">
+            </div>
+            <div class="form-group">
+                <label for="quad_ceiling">Ceiling:</label>
+                <input type="text" name="Ceiling" id="quad_ceiling">
+            </div>
+            <div class="form-group">
+                <label for="quad_mtom">MTOM:</label>
+                <input type="text" name="MTOM" id="quad_mtom">
+            </div>
+            <div class="form-group">
+                <label for="quad_cd0">Cd0:</label>
+                <input type="text" name="Cd0" id="quad_cd0">
             </div>
         </div>
 
@@ -230,8 +258,6 @@
             <button type="submit">Save Changes</button>
         </form>
     {% endif %}
-
-    
 
     <a href="{{ url_for('index') }}">Back to Home</a>
 

@@ -57,13 +57,13 @@ def fix(TSL, PSL, initial_latitude, initial_longitude, aircrafthdg, windspd, win
 
 
 
-def quad(PSL, TSL, aircrafthdg, initial_latitude, initial_longitude, windhdg, windspd, draft, vhor, ceiling, MTOM, Cd0, A):
+def quad(PSL, TSL, aircrafthdg, initial_latitude, initial_longitude, windhdg, windspd, draft, vhor, ceiling, MTOM, Cd0, A, As):
     
     draft = 0
 
     initial_position = (initial_latitude, initial_longitude)
     
-    resultquad = Ballisticpy.trajectoryprediction(PSL, TSL, aircrafthdg, windhdg, windspd, draft, vhor, ceiling, MTOM, Cd0, A)
+    resultquad = Ballisticpy.trajectoryprediction(PSL, TSL, aircrafthdg, windhdg, windspd, draft, vhor, ceiling, MTOM, Cd0, A, As)
     
 
     distance_traveledq = resultquad[5]
