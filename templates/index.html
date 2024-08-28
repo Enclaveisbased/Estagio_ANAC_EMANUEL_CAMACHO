@@ -33,6 +33,32 @@
             }
         }
 
+        function toggleInputMode() {
+            const manualInput = document.getElementById("manual_wind_input").checked;
+            const icaoCodeField = document.getElementById("icao_code_field");
+            const boundingBoxField = document.getElementById("bounding_box_field");
+            const windSpeedField = document.getElementById("wind_speed_field");
+            const windHeadingField = document.getElementById("wind_heading_field");
+            const seaLevelTempField = document.getElementById("sea_level_temp_field");
+            const seaLevelPressureField = document.getElementById("sea_level_pressure_field");
+
+            if (manualInput) {
+                icaoCodeField.style.display = "none";
+                boundingBoxField.style.display = "none";
+                windSpeedField.style.display = "block";
+                windHeadingField.style.display = "block";
+                seaLevelTempField.style.display = "block";
+                seaLevelPressureField.style.display = "block";
+            } else {
+                icaoCodeField.style.display = "block";
+                boundingBoxField.style.display = "block";
+                windSpeedField.style.display = "none";
+                windHeadingField.style.display = "none";
+                seaLevelTempField.style.display = "none";
+                seaLevelPressureField.style.display = "none";
+            }
+        }
+
         function fillDefaults() {
             document.getElementById('box').value = '38.70603814374191,-9.169521188831476,38.75571945218928,-9.12179932887582';
             document.getElementById('initial_latitude').value = '38.772044563205625';
@@ -185,22 +211,45 @@
             {% endif %}
         </div>
 
-        <div class="form-row">
-            <div class="form-group">
-                <label for="icao_code">ICAO Code:</label>
-                <input type="text" name="icao_code" id="icao_code" value="{{ icao_code }}" required class="{{ 'error' if errors.get('icao_code') else '' }}">
-                {% if errors.get('icao_code') %}
-                    <span class="error">{{ errors.get('icao_code') }}</span>
-                {% endif %}
-            </div>
+        <div class="form-group">
+            <input type="checkbox" id="manual_wind_input" name="manual_wind_input" onchange="toggleInputMode()">
+            <label for="manual_wind_input">Manually Input Wind Data and Meteorological Data</label>
+        </div>
 
-            <div class="form-group">
-                <label for="box">Bounding Box:</label>
-                <input type="text" name="box" id="box" value="{{ box }}" placeholder="Format: lat1,lon1,lat2,lon2" required class="{{ 'error' if errors.get('box') else '' }}">
-                {% if errors.get('box') %}
-                    <span class="error">{{ errors.get('box') }}</span>
-                {% endif %}
-            </div>
+        <div id="icao_code_field" class="form-group">
+            <label for="icao_code">ICAO Code:</label>
+            <input type="text" name="icao_code" id="icao_code" value="{{ icao_code }}" required class="{{ 'error' if errors.get('icao_code') else '' }}">
+            {% if errors.get('icao_code') %}
+                <span class="error">{{ errors.get('icao_code') }}</span>
+            {% endif %}
+        </div>
+
+        <div id="bounding_box_field" class="form-group">
+            <label for="box">Bounding Box:</label>
+            <input type="text" name="box" id="box" value="{{ box }}" placeholder="Format: lat1,lon1,lat2,lon2" required class="{{ 'error' if errors.get('box') else '' }}">
+            {% if errors.get('box') %}
+                <span class="error">{{ errors.get('box') }}</span>
+            {% endif %}
+        </div>
+
+        <div id="wind_speed_field" class="form-group" style="display: none;">
+            <label for="wind_speed">Wind Speed (knots):</label>
+            <input type="number" name="wind_speed" id="wind_speed" step="any">
+        </div>
+
+        <div id="wind_heading_field" class="form-group" style="display: none;">
+            <label for="wind_heading">Wind Heading (degrees):</label>
+            <input type="number" name="wind_heading" id="wind_heading" step="any" min="0" max="360">
+        </div>
+
+        <div id="sea_level_temp_field" class="form-group" style="display: none;">
+            <label for="sea_level_temp">Sea-Level Temperature (°C):</label>
+            <input type="number" name="sea_level_temp" id="sea_level_temp" step="any">
+        </div>
+
+        <div id="sea_level_pressure_field" class="form-group" style="display: none;">
+            <label for="sea_level_pressure">Sea-Level Pressure (hPa):</label>
+            <input type="number" name="sea_level_pressure" id="sea_level_pressure" step="any">
         </div>
 
         <div class="form-row">
@@ -217,6 +266,13 @@
                 <input type="number" name="initial_longitude" id="initial_longitude" step="any" min="-180" max="180" value="{{ initial_longitude }}" required class="{{ 'error' if errors.get('initial_longitude') else '' }}">
                 {% if errors.get('initial_longitude') %}
                     <span class="error">{{ errors.get('initial_longitude') }}</span>
+                {% endif %}
+            </div>
+            <div class="form-group">
+                <label for="initial_longitude">Initial Altitude:</label>
+                <input type="number" name="initial_altitude" id="initial_altitude" step="any" min="0" max="10000" value="{{ initial_altitude }}" required class="{{ 'error' if errors.get('initial_altitude') else '' }}">
+                {% if errors.get('initial_altitude') %}
+                    <span class="error">{{ errors.get('initial_altitude') }}</span>
                 {% endif %}
             </div>
         </div>
@@ -243,16 +299,5 @@
         <a href="#" class="default-values-button" onclick="fillDefaults()">Fill Default Values</a>
         <a href="{{ url_for('manage_aircraft') }}" class="aircraft-data-button">Manage Aircraft Data</a>
     </form>
-
-    <script>
-        function fillDefaults() {
-            document.getElementById('box').value = '38.70603814374191,-9.169521188831476,38.75571945218928,-9.12179932887582';
-            document.getElementById('initial_latitude').value = '38.772044563205625';
-            document.getElementById('initial_longitude').value = '-9.125695992070062';
-            document.getElementById('speed').value = '10';
-            document.getElementById('icao_code').value = 'LPPT';
-            document.getElementById('heading').value = '360';
-        }
-    </script>
 </body>
 </html>

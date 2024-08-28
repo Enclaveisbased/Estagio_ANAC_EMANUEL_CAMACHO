@@ -44,10 +44,16 @@ def run_analysis():
     # Retrieve and validate form data
     aircraft_type = request.form.get('aircraft_type')
     aircraft_name = request.form.get('aircraft_name')
-    icao_code = request.form.get('icao_code')
-    box = request.form.get('box')
+    manual_wind_input = request.form.get('manual_wind_input') == 'on'
+    wind_speed = request.form.get('wind_speed') if manual_wind_input else None
+    wind_heading = request.form.get('wind_heading') if manual_wind_input else None
+    sea_level_temp = request.form.get('sea_level_temp') if manual_wind_input else None
+    sea_level_pressure = request.form.get('sea_level_pressure') if manual_wind_input else None
+    icao_code = request.form.get('icao_code') if not manual_wind_input else None
+    box = request.form.get('box') if not manual_wind_input else None
     initial_latitude = request.form.get('initial_latitude')
     initial_longitude = request.form.get('initial_longitude')
+    initial_altitude = request.form.get('initial_altitude')
     heading = request.form.get('heading')
     speed = request.form.get('speed')
     
@@ -111,28 +117,54 @@ def run_analysis():
         except ValueError:
             errors['speed'] = "Speed must be a valid number."
 
+    # Validate speed
+    if initial_altitude:
+        try:
+            initial_altitude = float(initial_altitude)
+            # Fetch max speed from the dataframe
+            if aircraft_type == 'fixed_wing':
+                ceiling = fixed_wing_df.query("Name == @aircraft_name")['Ceiling'].values
+            else:
+                ceiling = quadcopter_df.query("Name == @aircraft_name")['Ceiling'].values
+            
+            if ceiling.size > 0 and initial_altitude > ceiling[0] and initial_altitude > 0:
+                errors['initial_altitude'] = f"Initial altitude must be less than or equal to the ceiling of {ceiling[0]}."
+        except ValueError:
+            errors['initial_altitude'] = "Altitude must be a valid number."
+
     if errors:
         return render_template('index.html', 
                                aircraft_type=aircraft_type, aircraft_name=aircraft_name,
                                icao_code=icao_code, box=box, initial_latitude=initial_latitude,
-                               initial_longitude=initial_longitude, heading=heading, speed=speed,
+                               initial_longitude=initial_longitude, heading=heading, speed=speed, initial_altitude = initial_altitude,
                                errors=errors, fixed_wing_list=fixed_wing_df['Name'].tolist(),
                                quadcopter_list=quadcopter_df['Name'].tolist())
     
     ### METAR AQUISITION
-    try:
-        box_formatted = ",".join(map(str, list(map(float, box.split(','))))) if box else ""
-        METARres = requests.get(f"https://aviationweather.gov/api/data/metar?ids={icao_code}&format=geojson&bbox={box_formatted}")
-        METARres.raise_for_status()
-        METAR = METARres.json()
-        
-        TSL = METAR["features"][1]["properties"]["temp"]
-        PSL = METAR["features"][1]["properties"]["altim"]
-        windspd = METAR["features"][1]["properties"]["wspd"]
-        windhdg = METAR["features"][1]["properties"]["wdir"]
-    except Exception as e:
-        flash(f"An error occurred while fetching METAR data: {e}", category='error')
-        return redirect(url_for('index'))
+    if not manual_wind_input:
+        try:
+            box_formatted = ",".join(map(str, list(map(float, box.split(','))))) if box else ""
+            METARres = requests.get(f"https://aviationweather.gov/api/data/metar?ids={icao_code}&format=geojson&bbox={box_formatted}")
+            METARres.raise_for_status()
+            METAR = METARres.json()
+
+            TSL = METAR["features"][1]["properties"]["temp"]
+            PSL = METAR["features"][1]["properties"]["altim"]
+            windspd = METAR["features"][1]["properties"]["wspd"]
+            windhdg = METAR["features"][1]["properties"]["wdir"]
+        except Exception as e:
+            flash(f"An error occurred while fetching METAR data: {e}", category='error')
+            return redirect(url_for('index'))
+    else:
+        try:
+            windspd = float(wind_speed)
+            windhdg = float(wind_heading)
+            TSL = float(sea_level_temp) if sea_level_temp else 15  # Default sea level temperature in °C
+            PSL = float(sea_level_pressure) if sea_level_pressure else 1013.25  # Default sea level pressure in hPa
+        except ValueError:
+            flash("Wind speed, heading, sea-level temperature, and pressure must be valid numbers.", category='error')
+            return redirect(url_for('index'))
+
 
     ### SPECIFIC AIRCRAFT DATA RETRIEVAL
     if aircraft_type == 'fixed_wing':
@@ -157,7 +189,7 @@ def run_analysis():
         Cd0 = aircraft_properties['Cd0']
         oswald = aircraft_properties['Oswald Coefficient']
         ceiling = aircraft_properties['Ceiling']
-        simresults = Simmpy.fix(TSL, PSL, initial_latitude, initial_longitude, heading, windspd, windhdg, ceiling, MTOM, AR, WA, Cd0, oswald, 0)
+        simresults = Simmpy.fix(TSL, PSL, initial_latitude, initial_longitude, heading, windspd, windhdg, initial_altitude, MTOM, AR, WA, Cd0, oswald, 0)
         finalv = np.round(simresults[2][0], decimals=3)
         distancetravelled = np.round(simresults[2][10], decimals=3)
     elif aircraft_type == 'quadcopter':
@@ -166,7 +198,7 @@ def run_analysis():
         As = aircraft_properties['Side area']
         Cd0 = aircraft_properties['Cd0']
         ceiling = aircraft_properties['Ceiling']
-        simresults = Simmpy.quad(PSL, TSL, heading, initial_latitude, initial_longitude, windhdg, windspd, 0, speed, ceiling, MTOM, Cd0, A, As)
+        simresults = Simmpy.quad(PSL, TSL, heading, initial_latitude, initial_longitude, windhdg, windspd, 0, speed, initial_altitude, MTOM, Cd0, A, As)
         distancetravelled = np.round(simresults[2][5], decimals=3)
         finalv = np.round(simresults[2][7], decimals=3)
 
