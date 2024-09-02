@@ -28,12 +28,10 @@ def load_data():
             'Top area', 'Side area'])
     return fixed_wing_df, quadcopter_df
 
-
 fixed_wing_df, quadcopter_df = load_data()
 
 def save_data(fixed_wing_df, quadcopter_df):
     try:
-        # Write data to Excel without headers
         with pd.ExcelWriter(file_path, engine='openpyxl', mode='w') as writer:
             fixed_wing_df.to_excel(writer, sheet_name='fixed', index=False, header=False)
             quadcopter_df.to_excel(writer, sheet_name='quad', index=False, header=False)
@@ -232,7 +230,7 @@ def run_analysis():
     x = np.round(simresults[2][2], decimals=3)
     y = np.round(simresults[2][3], decimals=3)
     z = np.round(simresults[2][4], decimals=3)
-    final_kinetic_energy = np.round(0.5*MTOM*finalv**2, decimals=3)
+    final_kinetic_energy = np.round(0.5 * MTOM * finalv**2, decimals=3)
 
     dxv = x.tolist()
     dyv = y.tolist()
@@ -245,12 +243,18 @@ def run_analysis():
 
 @app.route('/manage_aircraft')
 def manage_aircraft():
-    return render_template(
-        'manage_aircraft.html', 
-        fixed_wing_list=fixed_wing_df.to_dict(orient='records'), 
-        quadcopter_list=quadcopter_df.to_dict(orient='records'),
-        edit_mode=False  # Default edit mode is off
-    )
+    # Load data
+    fixed_wing_df, quadcopter_df = load_data()
+    
+    # Convert to lists of dictionaries for rendering
+    fixed_wing_list = fixed_wing_df.to_dict(orient='records')
+    quadcopter_list = quadcopter_df.to_dict(orient='records')
+    
+    # Render the template with the updated lists
+    return render_template('manage_aircraft.html', 
+                           fixed_wing_list=fixed_wing_list, 
+                           quadcopter_list=quadcopter_list)
+
 
 @app.route('/edit_aircraft/<string:aircraft_type>/<string:name>', methods=['GET', 'POST'])
 def edit_aircraft(aircraft_type, name):
@@ -264,16 +268,28 @@ def edit_aircraft(aircraft_type, name):
             return redirect(url_for('index'))
 
         # Find the index of the aircraft to be edited
-        index = df[df['Name'] == name].index[0]
+        index = df[df['Name'] == name].index
+        if index.empty:
+            flash("Aircraft not found.", "error")
+            return redirect(url_for('manage_aircraft'))
+        
+        index = index[0]  # Get the index value from the pandas Index object
 
         # Update fields from form data
         for column in df.columns:
             if column in request.form:
-                df.at[index, column] = request.form[column]
+                # Convert values to appropriate type (float) before updating
+                try:
+                    if column in ['Cruise speed', 'Max speed', 'Endurance', 'Ceiling', 'MTOM', 'Aspect Ratio', 'Wing Area', 'Cd0', 'Oswald Coefficient', 'Max Wind Resistance', 'Top area', 'Side area']:
+                        df.at[index, column] = float(request.form[column])
+                    else:
+                        df.at[index, column] = request.form[column]
+                except ValueError:
+                    flash(f"Invalid value for {column}. Please enter a valid number.", "error")
+                    return redirect(url_for('edit_aircraft', aircraft_type=aircraft_type, name=name))
 
         # Save the updated data
-        save_data(fixed_wing_df if aircraft_type == 'fixed_wing' else pd.DataFrame(), 
-                  quadcopter_df if aircraft_type == 'quadcopter' else pd.DataFrame())
+        save_data(fixed_wing_df, quadcopter_df)
 
         # Render the template with updated data
         return render_template('manage_aircraft.html', 
@@ -303,31 +319,78 @@ def edit_aircraft(aircraft_type, name):
 
 @app.route('/delete_aircraft/<string:aircraft_type>/<string:name>', methods=['POST'])
 def delete_aircraft(aircraft_type, name):
+    # Load data from your data source
     fixed_wing_df, quadcopter_df = load_data()
-
+    
+    # Convert dataframes to lists of dictionaries
+    fixed_wing_list = fixed_wing_df.to_dict(orient='records')
+    quadcopter_list = quadcopter_df.to_dict(orient='records')
+    
+    # Remove the aircraft from the appropriate list
     if aircraft_type == 'fixed_wing':
-        fixed_wing_df = fixed_wing_df[fixed_wing_df.iloc[:, 0] != name]
+        fixed_wing_list = [a for a in fixed_wing_list if a['Name'] != name]
+        # Update the dataframe with the new list
+        fixed_wing_df = pd.DataFrame(fixed_wing_list)
     elif aircraft_type == 'quadcopter':
-        quadcopter_df = quadcopter_df[quadcopter_df.iloc[:, 0] != name]
-    else:
-        flash("Invalid aircraft type.", "error")
-        return redirect(url_for('manage_aircraft'))
-
+        quadcopter_list = [a for a in quadcopter_list if a['Name'] != name]
+        # Update the dataframe with the new list
+        quadcopter_df = pd.DataFrame(quadcopter_list)
+    
+    # Save the updated data back to the data source
     save_data(fixed_wing_df, quadcopter_df)
-    flash(f'{aircraft_type} deleted successfully!', 'success')
+    
+    # Provide feedback and redirect
+    flash(f'{aircraft_type.capitalize()} deleted successfully!', 'success')
     return redirect(url_for('manage_aircraft'))
+
+
 
 @app.route('/add_aircraft', methods=['POST'])
 def add_aircraft():
     aircraft_type = request.form['aircraft_type']
-    new_aircraft = list(request.form.values())[1:]  # Convert form data to a list
-
-    fixed_wing_df, quadcopter_df = load_data()
-
+    
+    # Initialize aircraft data dictionary
+    aircraft_data = {
+        'fixed_wing' : {
+        'Name': request.form.get('Name'),
+        'Cruise Speed': request.form.get('Cruise Speed'),
+        'Max Speed': request.form.get('Max Speed'),
+        'Endurance': request.form.get('Endurance'),
+        'Ceiling': request.form.get('Ceiling'),
+        'MTOM': request.form.get('MTOM'),
+        'Aspect Ratio': request.form.get('Aspect Ratio'),
+        'Wing Area': request.form.get('Wing Area'),
+        'Cd0': request.form.get('Cd0'),
+        'Oswald Coefficient': request.form.get('Oswald Coefficient')
+    },
+        'quadcopter' : {
+        'Name': request.form.get('Name'),
+        'Max Speed': request.form.get('Max Speed'),
+        'Endurance': request.form.get('Endurance'),
+        'Ceiling': request.form.get('Ceiling'),
+        'MTOM': request.form.get('MTOM'),
+        'Cd0': request.form.get('Cd0'),
+        'Max Wind Resistance': request.form.get('Max Wind Resistance'),
+        'Side Area': request.form.get('Side Area'),
+        'Top Area': request.form.get('Top Area')
+    }
+    
+    
+    
+    
+    
+    }
+    
+    # Remove None values from aircraft_data
+    aircraft_data = [v for k, v in aircraft_data[aircraft_type].items() if v is not None]
+    
     if aircraft_type == 'fixed_wing':
-        fixed_wing_df.loc[len(fixed_wing_df)] = new_aircraft
+        print("DATA FIXED LOADED", fixed_wing_df)
+        fixed_wing_df.loc[len(fixed_wing_df)] = aircraft_data
+        
     elif aircraft_type == 'quadcopter':
-        quadcopter_df.loc[len(quadcopter_df)] = new_aircraft
+        print("DATA QUAD LOADED", aircraft_data)
+        quadcopter_df.loc[len(quadcopter_df)] = aircraft_data
     else:
         flash("Invalid aircraft type.", "error")
         return redirect(url_for('manage_aircraft'))
@@ -335,6 +398,5 @@ def add_aircraft():
     save_data(fixed_wing_df, quadcopter_df)
     flash(f'{aircraft_type} added successfully!', 'success')
     return redirect(url_for('manage_aircraft'))
-
 if __name__ == '__main__':
     app.run(debug=True)
