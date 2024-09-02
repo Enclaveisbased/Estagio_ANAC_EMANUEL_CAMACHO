@@ -250,81 +250,13 @@
         <input type="hidden" name="aircraft_type" value="{{ aircraft_type }}">
         <input type="hidden" name="name" value="{{ name }}">
 
-        <!-- Fixed-Wing Specific Fields -->
-        <div id="fixed-wing-fields-edit" class="{{ 'hidden' if aircraft_type != 'fixed_wing' else '' }}">
+        <!-- Dynamically generate fields -->
+        {% for field, value in aircraft_data.items() %}
             <div class="form-group">
-                <label for="fixed_cruise_speed">Cruise Speed:</label>
-                <input type="text" name="Cruise Speed" id="fixed_cruise_speed" value="{{ aircraft_data['Cruise speed'] }}">
+                <label for="{{ field }}">{{ field.replace('_', ' ').title() }}:</label>
+                <input type="text" name="{{ field }}" id="{{ field }}" value="{{ value }}">
             </div>
-            <div class="form-group">
-                <label for="fixed_max_speed">Max Speed:</label>
-                <input type="text" name="Max Speed" id="fixed_max_speed" value="{{ aircraft_data['Max speed'] }}">
-            </div>
-            <div class="form-group">
-                <label for="fixed_endurance">Endurance:</label>
-                <input type="text" name="Endurance" id="fixed_endurance" value="{{ aircraft_data['Endurance'] }}">
-            </div>
-            <div class="form-group">
-                <label for="fixed_ceiling">Ceiling:</label>
-                <input type="text" name="Ceiling" id="fixed_ceiling" value="{{ aircraft_data['Ceiling'] }}">
-            </div>
-            <div class="form-group">
-                <label for="fixed_mtom">MTOM:</label>
-                <input type="text" name="MTOM" id="fixed_mtom" value="{{ aircraft_data['MTOM'] }}">
-            </div>
-            <div class="form-group">
-                <label for="fixed_aspect_ratio">Aspect Ratio:</label>
-                <input type="text" name="Aspect Ratio" id="fixed_aspect_ratio" value="{{ aircraft_data['Aspect Ratio'] }}">
-            </div>
-            <div class="form-group">
-                <label for="fixed_wing_area">Wing Area:</label>
-                <input type="text" name="Wing Area" id="fixed_wing_area" value="{{ aircraft_data['Wing Area'] }}">
-            </div>
-            <div class="form-group">
-                <label for="fixed_cd0">Cd0:</label>
-                <input type="text" name="Cd0" id="fixed_cd0" value="{{ aircraft_data['Cd0'] }}">
-            </div>
-            <div class="form-group">
-                <label for="fixed_oswald">Oswald Coefficient:</label>
-                <input type="text" name="Oswald Coefficient" id="fixed_oswald" value="{{ aircraft_data['Oswald Coefficient'] }}">
-            </div>
-        </div>
-
-        <!-- Quadcopter Specific Fields -->
-        <div id="quadcopter-fields-edit" class="{{ 'hidden' if aircraft_type != 'quadcopter' else '' }}">
-            <div class="form-group">
-                <label for="quad_max_wind_resistance">Max Wind Resistance:</label>
-                <input type="text" name="Max Wind Resistance" id="quad_max_wind_resistance" value="{{ aircraft_data['Max Wind Resistance'] }}">
-            </div>
-            <div class="form-group">
-                <label for="quad_side_area">Side Area:</label>
-                <input type="text" name="Side Area" id="quad_side_area" value="{{ aircraft_data['Side area'] }}">
-            </div>
-            <div class="form-group">
-                <label for="quad_top_area">Top Area:</label>
-                <input type="text" name="Top Area" id="quad_top_area" value="{{ aircraft_data['Top area'] }}">
-            </div>
-            <div class="form-group">
-                <label for="quad_max_speed">Max Speed:</label>
-                <input type="text" name="Max Speed" id="quad_max_speed" value="{{ aircraft_data['Max speed'] }}">
-            </div>
-            <div class="form-group">
-                <label for="quad_endurance">Endurance:</label>
-                <input type="text" name="Endurance" id="quad_endurance" value="{{ aircraft_data['Endurance'] }}">
-            </div>
-            <div class="form-group">
-                <label for="quad_ceiling">Ceiling:</label>
-                <input type="text" name="Ceiling" id="quad_ceiling" value="{{ aircraft_data['Ceiling'] }}">
-            </div>
-            <div class="form-group">
-                <label for="quad_mtom">MTOM:</label>
-                <input type="text" name="MTOM" id="quad_mtom" value="{{ aircraft_data['MTOM'] }}">
-            </div>
-            <div class="form-group">
-                <label for="quad_cd0">Cd0:</label>
-                <input type="text" name="Cd0" id="quad_cd0" value="{{ aircraft_data['Cd0'] }}">
-            </div>
-        </div>
+        {% endfor %}
 
         <button type="submit">Save Changes</button>
     </form>
