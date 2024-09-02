@@ -3,13 +3,23 @@ import pandas as pd
 import json
 import requests
 import numpy as np
+import webbrowser
+import threading
 import Simmpy
+import sys
+import os
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key'  # For session management
-
+app.secret_key = 'your_secret_key'  # Needed for flash messages
 file_path = 'DATASHEET.xlsx'
+if getattr(sys, 'frozen', False):
+    # Running in a bundle
+    base_path = sys._MEIPASS
+else:
+    # Running in a normal Python environment
+    base_path = os.path.dirname(__file__)
 
+file_path = os.path.join(base_path, 'DATASHEET.xlsx')
 # Load data initially
 def load_data():
     try:
@@ -399,4 +409,12 @@ def add_aircraft():
     flash(f'{aircraft_type} added successfully!', 'success')
     return redirect(url_for('manage_aircraft'))
 if __name__ == '__main__':
+    # Function to open the browser
+    def open_browser():
+        webbrowser.open("http://127.0.0.1:5000/")
+
+    # Start the Flask app in a separate thread
+    threading.Thread(target=open_browser).start()
+    
+    # Run the Flask app
     app.run(debug=True)
