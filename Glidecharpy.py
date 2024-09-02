@@ -61,6 +61,7 @@ def glide_characteristics(Psl, Tsl, crafthdg, Whdg, Wspdkt, draft, hm, M, A, Sm,
     GS_reskthdg = [cf.convvel(np.linalg.norm(GS_bgvec), 'ft/s', 'kts'), GS_hdg]
     if not np.array_equal(wind, [0, 0]):
         gamma_bg = np.degrees(np.arcsin(fpstruevspeed / np.linalg.norm(TAS_bgvec - wind)))
+        gamma_bg_rad = cf.convang(gamma_bg, 'rad', 'deg')
 
     # Aerodynamic quantities calculation
     D_bg = -W * np.sin(gamma_bg_rad)

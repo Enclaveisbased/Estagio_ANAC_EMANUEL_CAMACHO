@@ -9,46 +9,55 @@ app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # For session management
 
 file_path = 'DATASHEET.xlsx'
-fixed_wing_df = pd.read_excel(file_path, sheet_name='fixed', header=None, names=[
-    'Name', 'Cruise speed', 'Max speed', 'Endurance', 'Ceiling', 'MTOM', 
-    'Aspect Ratio', 'Wing Area', 'Cd0', 'Oswald Coefficient'])
-quadcopter_df = pd.read_excel(file_path, sheet_name='quad', header=None, names=[
-    'Name', 'Ceiling', 'Max Wind Resistance', 'MTOM', 'Cd0', 'Max speed', 'Top area', 'Side area'])
 
+# Load data initially
 def load_data():
-    # Load the data without using headers
-    fixed_wing_df = pd.read_excel(file_path, sheet_name='fixed', header=None)
-    quadcopter_df = pd.read_excel(file_path, sheet_name='quad', header=None)
+    try:
+        fixed_wing_df = pd.read_excel(file_path, sheet_name='fixed', header=None)
+        quadcopter_df = pd.read_excel(file_path, sheet_name='quad', header=None)
+        fixed_wing_df.columns = ['Name', 'Cruise speed', 'Max speed', 'Endurance', 'Ceiling', 'MTOM',
+                                 'Aspect Ratio', 'Wing Area', 'Cd0', 'Oswald Coefficient']
+        quadcopter_df.columns = ['Name', 'Ceiling', 'Max Wind Resistance', 'MTOM', 'Cd0', 'Max speed',
+                                 'Top area', 'Side area']
+    except FileNotFoundError:
+        fixed_wing_df = pd.DataFrame(columns=[
+            'Name', 'Cruise speed', 'Max speed', 'Endurance', 'Ceiling', 'MTOM',
+            'Aspect Ratio', 'Wing Area', 'Cd0', 'Oswald Coefficient'])
+        quadcopter_df = pd.DataFrame(columns=[
+            'Name', 'Ceiling', 'Max Wind Resistance', 'MTOM', 'Cd0', 'Max speed',
+            'Top area', 'Side area'])
     return fixed_wing_df, quadcopter_df
 
 
+fixed_wing_df, quadcopter_df = load_data()
+
 def save_data(fixed_wing_df, quadcopter_df):
     try:
-        # Load existing data if the file exists
-        try:
-            with pd.ExcelFile(file_path, engine='openpyxl') as xls:
-                fixed_wing_existing = pd.read_excel(xls, sheet_name='fixed')
-                quadcopter_existing = pd.read_excel(xls, sheet_name='quad')
-        except FileNotFoundError:
-            # If file doesn't exist, initialize empty DataFrames
-            fixed_wing_existing = pd.DataFrame()
-            quadcopter_existing = pd.DataFrame()
-
-        # Write data to Excel with existing headers
-        with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
-            fixed_wing_df.to_excel(writer, sheet_name='fixed', index=False, header=fixed_wing_existing.empty)
-            quadcopter_df.to_excel(writer, sheet_name='quad', index=False, header=quadcopter_existing.empty)
+        # Write data to Excel without headers
+        with pd.ExcelWriter(file_path, engine='openpyxl', mode='w') as writer:
+            fixed_wing_df.to_excel(writer, sheet_name='fixed', index=False, header=False)
+            quadcopter_df.to_excel(writer, sheet_name='quad', index=False, header=False)
     except Exception as e:
         print(f"Failed to save data: {e}")
         flash("An error occurred while saving the data.", "danger")
 
-print(quadcopter_df)
-
 @app.route('/')
 def index():
+    try:
+        fixed_wing_list = fixed_wing_df['Name'].tolist()
+    except KeyError:
+        fixed_wing_list = []
+        flash("Error: 'Name' column not found in fixed wing data.", "error")
+    
+    try:
+        quadcopter_list = quadcopter_df['Name'].tolist()
+    except KeyError:
+        quadcopter_list = []
+        flash("Error: 'Name' column not found in quadcopter data.", "error")
+    
     return render_template('index.html',
-                           fixed_wing_list=fixed_wing_df['Name'].tolist(),
-                           quadcopter_list=quadcopter_df['Name'].tolist(),
+                           fixed_wing_list=fixed_wing_list,
+                           quadcopter_list=quadcopter_list,
                            errors={})
 
 @app.route('/run_analysis', methods=['POST'])
@@ -131,11 +140,11 @@ def run_analysis():
         except ValueError:
             errors['speed'] = "Speed must be a valid number."
 
-    # Validate speed
+    # Validate altitude
     if initial_altitude:
         try:
             initial_altitude = float(initial_altitude)
-            # Fetch max speed from the dataframe
+            # Fetch ceiling from the dataframe
             if aircraft_type == 'fixed_wing':
                 ceiling = fixed_wing_df.query("Name == @aircraft_name")['Ceiling'].values
             else:
@@ -234,18 +243,6 @@ def run_analysis():
                            initial_latitude=initial_latitude, initial_longitude=initial_longitude,
                            final_latitude=final_latitude, final_longitude=final_longitude, distancetravelled=distancetravelled, final_kinetic_energy=final_kinetic_energy)
 
-def load_data():
-    # Load data from the Excel file
-    fixed_wing_df = pd.read_excel('DATASHEET.xlsx', sheet_name='fixed')
-    quadcopter_df = pd.read_excel('DATASHEET.xlsx', sheet_name='quad')
-    return fixed_wing_df, quadcopter_df
-
-def save_data(fixed_wing_df, quadcopter_df):
-    # Save data to the Excel file
-    with pd.ExcelWriter('DATASHEET.xlsx', engine='xlsxwriter') as writer:
-        fixed_wing_df.to_excel(writer, sheet_name='fixed', index=False)
-        quadcopter_df.to_excel(writer, sheet_name='quad', index=False)
-        
 @app.route('/manage_aircraft')
 def manage_aircraft():
     return render_template(
@@ -304,29 +301,21 @@ def edit_aircraft(aircraft_type, name):
                            fixed_wing_list=fixed_wing_df.to_dict(orient='records'),
                            quadcopter_list=quadcopter_df.to_dict(orient='records'))
 
-
-
 @app.route('/delete_aircraft/<string:aircraft_type>/<string:name>', methods=['POST'])
 def delete_aircraft(aircraft_type, name):
     fixed_wing_df, quadcopter_df = load_data()
 
     if aircraft_type == 'fixed_wing':
-        # Print for debugging
-        print(f"Trying to delete Fixed-Wing aircraft with name: {name}")
-        print(f"Available names in fixed_wing_df: {fixed_wing_df.iloc[:, 0].tolist()}")
-
         fixed_wing_df = fixed_wing_df[fixed_wing_df.iloc[:, 0] != name]
     elif aircraft_type == 'quadcopter':
-        # Print for debugging
-        print(f"Trying to delete Quadcopter aircraft with name: {name}")
-        print(f"Available names in quadcopter_df: {quadcopter_df.iloc[:, 0].tolist()}")
-
         quadcopter_df = quadcopter_df[quadcopter_df.iloc[:, 0] != name]
+    else:
+        flash("Invalid aircraft type.", "error")
+        return redirect(url_for('manage_aircraft'))
 
     save_data(fixed_wing_df, quadcopter_df)
     flash(f'{aircraft_type} deleted successfully!', 'success')
     return redirect(url_for('manage_aircraft'))
-
 
 @app.route('/add_aircraft', methods=['POST'])
 def add_aircraft():
@@ -339,9 +328,13 @@ def add_aircraft():
         fixed_wing_df.loc[len(fixed_wing_df)] = new_aircraft
     elif aircraft_type == 'quadcopter':
         quadcopter_df.loc[len(quadcopter_df)] = new_aircraft
+    else:
+        flash("Invalid aircraft type.", "error")
+        return redirect(url_for('manage_aircraft'))
 
     save_data(fixed_wing_df, quadcopter_df)
     flash(f'{aircraft_type} added successfully!', 'success')
     return redirect(url_for('manage_aircraft'))
+
 if __name__ == '__main__':
     app.run(debug=True)
