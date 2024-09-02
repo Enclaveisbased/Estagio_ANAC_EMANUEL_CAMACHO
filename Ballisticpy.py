@@ -33,8 +33,8 @@ def trajectoryprediction(Psl, Tsl, crafthdg, windhdg, Wspdkt, draft, vhor, hmax,
 
     windspddrag = Wspdkt/2 #Calculate the terminal horizontal velocity with drag and approximate the movement for a constat speed
     
-    x_wind = windspddrag * np.cos(np.pi/2 - np.deg2rad(windhdg))
-    y_wind = windspddrag * np.sin(np.pi/2 - np.deg2rad(windhdg))
+    x_wind = windspddrag * np.sin(np.deg2rad(windhdg))
+    y_wind = windspddrag * np.cos(np.deg2rad(windhdg))
     z_wind = draft
     wind = np.array([x_wind, y_wind]) #All in knots
 

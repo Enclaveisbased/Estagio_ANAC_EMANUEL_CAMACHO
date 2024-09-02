@@ -23,10 +23,14 @@ def load_data():
 
 
 def save_data(fixed_wing_df, quadcopter_df):
-    with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
-        # Write back data without headers
-        fixed_wing_df.to_excel(writer, sheet_name='fixed', header=False, index=False)
-        quadcopter_df.to_excel(writer, sheet_name='quad', header=False, index=False)
+    try:
+        with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
+            # Write back data without headers
+            fixed_wing_df.to_excel(writer, sheet_name='fixed', header=False, index=False)
+            quadcopter_df.to_excel(writer, sheet_name='quad', header=False, index=False)
+    except Exception as e:
+        print(f"Failed to save data: {e}")
+        flash("An error occurred while saving the data.", "danger")
 
 print(quadcopter_df)
 
@@ -220,11 +224,100 @@ def run_analysis():
                            initial_latitude=initial_latitude, initial_longitude=initial_longitude,
                            final_latitude=final_latitude, final_longitude=final_longitude, distancetravelled=distancetravelled, final_kinetic_energy=final_kinetic_energy)
 
+def load_data():
+    # Load data from the Excel file
+    fixed_wing_df = pd.read_excel('DATASHEET.xlsx', sheet_name='fixed')
+    quadcopter_df = pd.read_excel('DATASHEET.xlsx', sheet_name='quad')
+    return fixed_wing_df, quadcopter_df
+
+def save_data(fixed_wing_df, quadcopter_df):
+    # Save data to the Excel file
+    with pd.ExcelWriter('DATASHEET.xlsx', engine='xlsxwriter') as writer:
+        fixed_wing_df.to_excel(writer, sheet_name='fixed', index=False)
+        quadcopter_df.to_excel(writer, sheet_name='quad', index=False)
+        
 @app.route('/manage_aircraft')
 def manage_aircraft():
+    return render_template(
+        'manage_aircraft.html', 
+        fixed_wing_list=fixed_wing_df.to_dict(orient='records'), 
+        quadcopter_list=quadcopter_df.to_dict(orient='records'),
+        edit_mode=False  # Default edit mode is off
+    )
+
+@app.route('/edit_aircraft/<string:aircraft_type>/<string:name>', methods=['POST'])
+def edit_aircraft(aircraft_type, name):
+    # Check which aircraft type is being edited
+    if aircraft_type == 'fixed_wing':
+        # Find the specific aircraft in the fixed-wing DataFrame
+        index = fixed_wing_df[fixed_wing_df['Name'] == name].index[0]
+        
+        # Update the DataFrame with data from the form
+        fixed_wing_df.at[index, 'Cruise speed'] = request.form['Cruise Speed']
+        fixed_wing_df.at[index, 'Max speed'] = request.form['Max Speed']
+        fixed_wing_df.at[index, 'Endurance'] = request.form['Endurance']
+        fixed_wing_df.at[index, 'Ceiling'] = request.form['Ceiling']
+        fixed_wing_df.at[index, 'MTOM'] = request.form['MTOM']
+        fixed_wing_df.at[index, 'Aspect Ratio'] = request.form['Aspect Ratio']
+        fixed_wing_df.at[index, 'Wing Area'] = request.form['Wing Area']
+        fixed_wing_df.at[index, 'Cd0'] = request.form['Cd0']
+        fixed_wing_df.at[index, 'Oswald Coefficient'] = request.form['Oswald Coefficient']
+        
+        # Save the updated DataFrames
+        save_data(fixed_wing_df, quadcopter_df)
+
+    elif aircraft_type == 'quadcopter':
+        # Find the specific aircraft in the quadcopter DataFrame
+        index = quadcopter_df[quadcopter_df['Name'] == name].index[0]
+        
+        # Update the DataFrame with data from the form
+        quadcopter_df.at[index, 'Max Wind Resistance'] = request.form['Max Wind Resistance']
+        quadcopter_df.at[index, 'Side area'] = request.form['Side Area']
+        quadcopter_df.at[index, 'Top area'] = request.form['Top Area']
+        quadcopter_df.at[index, 'Max speed'] = request.form['Max Speed']
+        quadcopter_df.at[index, 'Endurance'] = request.form['Endurance']
+        quadcopter_df.at[index, 'Ceiling'] = request.form['Ceiling']
+        quadcopter_df.at[index, 'MTOM'] = request.form['MTOM']
+        quadcopter_df.at[index, 'Cd0'] = request.form['Cd0']
+        
+        # Save the updated DataFrames
+        save_data(fixed_wing_df, quadcopter_df)
+
+    else:
+        flash("Invalid aircraft type.", "error")
+        return redirect(url_for('index'))
+
+    # Render the manage_aircraft.html template with edit_mode enabled and the updated aircraft data passed
     return render_template('manage_aircraft.html', 
-                           fixed_wing_list=fixed_wing_df.to_dict(orient='records'), 
+                           edit_mode=True, 
+                           aircraft_type=aircraft_type, 
+                           name=name, 
+                           aircraft_data=request.form,  # Pass the updated form data
+                           fixed_wing_list=fixed_wing_df.to_dict(orient='records'),
                            quadcopter_list=quadcopter_df.to_dict(orient='records'))
+
+
+@app.route('/delete_aircraft/<string:aircraft_type>/<string:name>', methods=['POST'])
+def delete_aircraft(aircraft_type, name):
+    fixed_wing_df, quadcopter_df = load_data()
+
+    if aircraft_type == 'fixed_wing':
+        # Print for debugging
+        print(f"Trying to delete Fixed-Wing aircraft with name: {name}")
+        print(f"Available names in fixed_wing_df: {fixed_wing_df.iloc[:, 0].tolist()}")
+
+        fixed_wing_df = fixed_wing_df[fixed_wing_df.iloc[:, 0] != name]
+    elif aircraft_type == 'quadcopter':
+        # Print for debugging
+        print(f"Trying to delete Quadcopter aircraft with name: {name}")
+        print(f"Available names in quadcopter_df: {quadcopter_df.iloc[:, 0].tolist()}")
+
+        quadcopter_df = quadcopter_df[quadcopter_df.iloc[:, 0] != name]
+
+    save_data(fixed_wing_df, quadcopter_df)
+    flash(f'{aircraft_type} deleted successfully!', 'success')
+    return redirect(url_for('manage_aircraft'))
+
 
 @app.route('/add_aircraft', methods=['POST'])
 def add_aircraft():
@@ -241,37 +334,5 @@ def add_aircraft():
     save_data(fixed_wing_df, quadcopter_df)
     flash(f'{aircraft_type} added successfully!', 'success')
     return redirect(url_for('manage_aircraft'))
-
-@app.route('/edit_aircraft/<aircraft_type>/<name>', methods=['POST'])
-def edit_aircraft(aircraft_type, name):
-    fixed_wing_df, quadcopter_df = load_data()
-    updated_aircraft = list(request.form.values())[1:]
-
-    if aircraft_type == 'fixed_wing':
-        idx = fixed_wing_df[fixed_wing_df[0] == name].index
-        if not idx.empty:
-            fixed_wing_df.loc[idx] = updated_aircraft
-    elif aircraft_type == 'quadcopter':
-        idx = quadcopter_df[quadcopter_df[0] == name].index
-        if not idx.empty:
-            quadcopter_df.loc[idx] = updated_aircraft
-
-    save_data(fixed_wing_df, quadcopter_df)
-    flash(f'{aircraft_type} updated successfully!', 'success')
-    return redirect(url_for('manage_aircraft'))
-
-@app.route('/delete_aircraft/<aircraft_type>/<name>', methods=['POST'])
-def delete_aircraft(aircraft_type, name):
-    fixed_wing_df, quadcopter_df = load_data()
-
-    if aircraft_type == 'fixed_wing':
-        fixed_wing_df = fixed_wing_df[fixed_wing_df[0] != name]
-    elif aircraft_type == 'quadcopter':
-        quadcopter_df = quadcopter_df[quadcopter_df[0] != name]
-
-    save_data(fixed_wing_df, quadcopter_df)
-    flash(f'{aircraft_type} deleted successfully!', 'success')
-    return redirect(url_for('manage_aircraft'))
-
 if __name__ == '__main__':
     app.run(debug=True)

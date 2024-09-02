@@ -75,7 +75,7 @@ def glide_characteristics(Psl, Tsl, crafthdg, Whdg, Wspdkt, draft, hm, M, A, Sm,
     C_L_met = L_m / (qmet * Sm)
 
     # Verification of Drag minimization and L/D optimization
-    TASver = np.arange(0.5*np.round(TAS_bg), 1.5*np.round(TAS_bg), 0.5)
+    TASver = np.arange(0.5*np.round(TAS_bg), 1.5*np.round(TAS_bg), 0.2)
     KTASver = cf.convvel(TASver, 'ft/s', 'kts')
     KCASver = cf.correctairspeed(KTASver, a, P, 'TAS', 'CAS')
     qbarver = cf.dpressure(np.column_stack([TASver, np.zeros((len(TASver), 2))]), rhosl)
@@ -91,7 +91,7 @@ def glide_characteristics(Psl, Tsl, crafthdg, Whdg, Wspdkt, draft, hm, M, A, Sm,
     Maxx, Indd = np.max(L / Dm), np.argmax(L / Dm)
     MaxxLDTAS = KCASver[Indd]
 
-    # Plotting
+    """ # Plotting
     plt.figure()
     plt.plot(KCASver, L / Dm, label='L/D')
     plt.plot(KCAS_bg, L_m / D_m, 'o', markerfacecolor='black', markeredgecolor='black', color='white', label='L_bg/D_bg')
@@ -112,7 +112,7 @@ def glide_characteristics(Psl, Tsl, crafthdg, Whdg, Wspdkt, draft, hm, M, A, Sm,
     plt.xlabel('KCAS in knots')
     plt.ylabel('Drag, Newtons')
     plt.legend()
-    plt.show()
+    plt.show()"""
 
 
     traveltime = hm/(cf.convvel(-fpstruevspeed, 'ft/s', 'm/s'))
